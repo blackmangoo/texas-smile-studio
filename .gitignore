@@ -12,8 +12,8 @@
 .env*.local
 /.data/
 
-# Raw source videos (large source binaries)
-/assets/raw/*.mp4
+# Raw source videos & raw logo source (large source binaries)
+/assets/raw/*
 
 # Test run artifacts & transient QA screenshots
 /docs/phase-5-qa/

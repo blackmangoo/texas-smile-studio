@@ -630,13 +630,23 @@ export function BookingAndFooterSection({
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-14 border-b border-white/10">
             <div className="lg:col-span-5">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#C8A26B]/60 bg-white/10 text-sm font-semibold text-[#FFFDFA]">
-                  TS
-                </span>
-                <span className="font-serif text-2xl text-[#FFFDFA]">
-                  Texas Smile Studio
-                </span>
+              <div className="flex items-center gap-4">
+                <img
+                  src="/brand/logo-crest.webp"
+                  alt="Texas Smile Studio — Dallas Architectural Dentistry Crest"
+                  width={72}
+                  height={72}
+                  loading="lazy"
+                  className="h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 rounded-full object-cover shadow-lg"
+                />
+                <div>
+                  <span className="block font-serif text-2xl text-[#FFFDFA]">
+                    Texas Smile Studio
+                  </span>
+                  <span className="block text-[11px] font-medium uppercase tracking-[0.16em] text-[#C8A26B] mt-0.5">
+                    Dallas Architectural Dentistry
+                  </span>
+                </div>
               </div>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#9FB7BE]">
                 Calm, precise restorative, orthodontic, cosmetic, and family

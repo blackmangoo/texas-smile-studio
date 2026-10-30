@@ -54,16 +54,20 @@ export function Navbar() {
       className="fixed top-0 left-0 right-0 z-50 bg-transparent text-[#FFFDFA] transition-colors duration-300 data-[scrolled=true]:bg-[#13232C]/95 data-[scrolled=true]:border-b data-[scrolled=true]:border-white/10 data-[scrolled=true]:shadow-lg"
     >
       <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
-        {/* Brand Wordmark */}
+        {/* Brand Wordmark with Custom Sculpted Medallion Emblem */}
         <button
           type="button"
           onClick={() => handleNavClick("#hero-stage")}
-          className="group flex items-center gap-2.5 sm:gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#63E6D9]"
+          className="group flex items-center gap-2.5 sm:gap-3.5 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#63E6D9] cursor-pointer"
           aria-label="Texas Smile Studio — Return to top"
         >
-          <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border border-[#C8A26B]/60 bg-white/10 text-xs sm:text-sm font-semibold tracking-wider text-[#FFFDFA] transition-transform duration-300 group-hover:scale-105">
-            TS
-          </span>
+          <img
+            src="/brand/logo-emblem.webp"
+            alt="Texas Smile Studio Emblem"
+            width={44}
+            height={44}
+            className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-full object-cover shadow-md transition-transform duration-300 group-hover:scale-105"
+          />
           <span className="flex flex-col">
             <span className="font-serif text-base sm:text-xl font-normal tracking-tight text-[#FFFDFA] leading-none whitespace-nowrap">
               Texas Smile Studio
