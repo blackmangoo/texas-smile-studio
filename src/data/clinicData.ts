@@ -18,6 +18,7 @@ export interface ScrollSceneConfig {
   spotlightHex: string;
   canvasMaskCss: string;
   scrollLengthVh: number;
+  mobileScrollLengthVh: number;
   desktop: {
     width: number;
     height: number;
@@ -45,6 +46,7 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
     canvasMaskCss:
       "radial-gradient(49% 49% at 50% 50%, #000 66%, rgba(0,0,0,0.55) 83%, transparent 98%)",
     scrollLengthVh: 300,
+    mobileScrollLengthVh: 190,
     desktop: {
       width: 1920,
       height: 1080,
@@ -53,9 +55,9 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
       dir: "/frames/scene-01-hero/desktop",
     },
     mobile: {
-      width: 960,
-      height: 720,
-      frameCount: 120,
+      width: 640,
+      height: 480,
+      frameCount: 64,
       poster: "/frames/scene-01-hero/poster-mobile.webp",
       dir: "/frames/scene-01-hero/mobile",
     },
@@ -101,6 +103,7 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
     canvasMaskCss:
       "radial-gradient(49% 49% at 50% 50%, #000 68%, rgba(0,0,0,0.55) 84%, transparent 98%)",
     scrollLengthVh: 250,
+    mobileScrollLengthVh: 165,
     desktop: {
       width: 1920,
       height: 1080,
@@ -109,9 +112,9 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
       dir: "/frames/scene-02-implant/desktop",
     },
     mobile: {
-      width: 960,
-      height: 720,
-      frameCount: 120,
+      width: 640,
+      height: 480,
+      frameCount: 64,
       poster: "/frames/scene-02-implant/poster-mobile.webp",
       dir: "/frames/scene-02-implant/mobile",
     },
@@ -157,6 +160,7 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
     canvasMaskCss:
       "radial-gradient(50% 49% at 50% 50%, #000 72%, rgba(0,0,0,0.5) 86%, transparent 98%)",
     scrollLengthVh: 250,
+    mobileScrollLengthVh: 165,
     desktop: {
       width: 1920,
       height: 1080,
@@ -165,9 +169,9 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
       dir: "/frames/scene-03-scan-whitening/desktop",
     },
     mobile: {
-      width: 960,
-      height: 720,
-      frameCount: 120,
+      width: 640,
+      height: 480,
+      frameCount: 64,
       poster: "/frames/scene-03-scan-whitening/poster-mobile.webp",
       dir: "/frames/scene-03-scan-whitening/mobile",
     },

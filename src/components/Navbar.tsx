@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { smoothScrollTo } from "@/lib/scrollBus";
 import { ArrowUpRightIcon } from "@/components/icons/DentalIcons";
 
@@ -15,13 +15,18 @@ const NAV_LINKS = [
 ] as const;
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Zero-React-re-render scroll styling via imperative data attribute
   useEffect(() => {
+    let lastState = false;
     const onScroll = () => {
       const isPast = window.scrollY > 48;
-      setScrolled((prev) => (prev !== isPast ? isPast : prev));
+      if (isPast !== lastState && headerRef.current) {
+        lastState = isPast;
+        headerRef.current.dataset.scrolled = isPast ? "true" : "false";
+      }
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -44,11 +49,9 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-        scrolled
-          ? "bg-[#13232C]/95 text-[#FFFDFA] border-b border-white/10 shadow-lg"
-          : "bg-transparent text-[#FFFDFA]"
-      }`}
+      ref={headerRef}
+      data-scrolled="false"
+      className="fixed top-0 left-0 right-0 z-50 bg-transparent text-[#FFFDFA] transition-colors duration-300 data-[scrolled=true]:bg-[#13232C]/95 data-[scrolled=true]:border-b data-[scrolled=true]:border-white/10 data-[scrolled=true]:shadow-lg"
     >
       <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
         {/* Brand Wordmark */}
@@ -88,7 +91,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Right Actions: Phone + Schedule Now CTA + Mobile Hamburger */}
+        {/* Right Actions */}
         <div className="flex items-center gap-3">
           <a
             href="tel:+12145550192"
@@ -113,7 +116,9 @@ export function Navbar() {
             onClick={() => setMobileOpen((v) => !v)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
-            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-label={
+              mobileOpen ? "Close navigation menu" : "Open navigation menu"
+            }
             className="inline-flex lg:hidden h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white"
           >
             <svg

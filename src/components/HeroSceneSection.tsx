@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useCallback } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -40,8 +40,37 @@ export function HeroSceneSection() {
   const scene = SCROLL_SCENES["scene-01-hero"];
   const pinSectionRef = useRef<HTMLDivElement | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
-  const [activeAct, setActiveAct] = useState<0 | 1 | 2>(0);
-  const [manualAct, setManualAct] = useState<0 | 1 | 2 | null>(null);
+
+  // Imperative DOM Act update: 0 React re-renders during scroll!
+  const applyActDom = useCallback((actIdx: 0 | 1 | 2) => {
+    const root = pinSectionRef.current;
+    if (!root) return;
+    root.dataset.act = String(actIdx);
+
+    root.querySelectorAll<HTMLElement>("[data-hero-act-panel]").forEach((el) => {
+      el.classList.toggle("hidden", el.dataset.heroActPanel !== String(actIdx));
+    });
+
+    root.querySelectorAll<HTMLButtonElement>("[data-hero-act-tab]").forEach((btn) => {
+      const active = btn.dataset.heroActTab === String(actIdx);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+      btn.className = active
+        ? "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors cursor-pointer bg-[#C8A26B] text-[#13232C]"
+        : "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors cursor-pointer bg-white/10 text-[#EAF7FA]/80 hover:bg-white/20";
+    });
+  }, []);
+
+  const handleManualActClick = useCallback(
+    (idx: 0 | 1 | 2) => {
+      applyActDom(idx);
+      const stageNode = pinSectionRef.current?.querySelector<
+        HTMLDivElement & { __setSceneProgress?: (p: number, snap?: boolean) => void }
+      >('[data-scene-stage="scene-01-hero"]');
+      const p = idx === 0 ? 0.04 : idx === 1 ? 0.5 : 0.96;
+      stageNode?.__setSceneProgress?.(p, true);
+    },
+    [applyActDom]
+  );
 
   useGSAP(
     () => {
@@ -54,33 +83,44 @@ export function HeroSceneSection() {
 
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        ScrollTrigger.create({
-          trigger: triggerEl,
-          start: "top top",
-          end: `+=${scene.scrollLengthVh}%`,
-          pin: true,
-          scrub: 0.35,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            stageNode?.__setSceneProgress?.(self.progress);
-          },
-        });
-      });
+      mm.add(
+        {
+          isDesktop:
+            "(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+          isTouch:
+            "(max-width: 1023px) and (prefers-reduced-motion: no-preference), (pointer: coarse) and (prefers-reduced-motion: no-preference)",
+        },
+        (context) => {
+          const isTouch = Boolean(context.conditions?.isTouch);
+          ScrollTrigger.create({
+            trigger: triggerEl,
+            start: "top top",
+            end: `+=${
+              isTouch ? scene.mobileScrollLengthVh : scene.scrollLengthVh
+            }%`,
+            pin: true,
+            scrub: isTouch ? true : 0.35,
+            anticipatePin: 1,
+            fastScrollEnd: true,
+            onUpdate: (self) => {
+              stageNode?.__setSceneProgress?.(self.progress);
+            },
+          });
+        }
+      );
 
       return () => mm.revert();
     },
     { scope: pinSectionRef }
   );
 
-  const currentActData = scene.acts[activeAct];
-
   return (
     <section id="hero-stage" aria-label="Hero — Architectural Dental Care">
       {/* Pinned Full-Viewport Stage on Exact Calibrated Lagoon #135865 */}
       <div
         ref={pinSectionRef}
-        className="relative min-h-[100svh] w-full overflow-hidden flex flex-col justify-between pt-20 pb-5 sm:pb-8 lg:pb-10"
+        data-act="0"
+        className="relative min-h-[100svh] w-full overflow-hidden flex flex-col justify-between pt-20 pb-5 sm:pb-8 lg:pb-10 will-change-transform"
         style={{ backgroundColor: scene.sectionBgHex, color: "#FFFDFA" }}
       >
         {/* Top Editorial Row */}
@@ -113,53 +153,62 @@ export function HeroSceneSection() {
             </div>
           </div>
 
-          {/* Single Unified 3D Dental Arch Stage: Fits cleanly inside 844px mobile viewport & Dead-Center Absolute on Desktop */}
+          {/* Single Unified 3D Dental Arch Stage */}
           <div className="lg:col-span-4 w-full h-[270px] sm:h-[340px] lg:pointer-events-none lg:absolute lg:inset-0 lg:h-full flex items-center justify-center">
             <div className="relative w-full max-w-[1160px] h-full lg:h-[78vh]">
               <ScrollSequenceStage
                 scene={scene}
                 eager={true}
-                onActChange={setActiveAct}
+                onActChange={applyActDom}
                 progressBarRef={progressBarRef}
-                actStepManual={manualAct}
               />
             </div>
           </div>
 
-          {/* Right Live Restorative Act Switcher Card — locked to columns 9..12 on lg */}
-          <div className="relative z-10 lg:col-span-4 lg:col-start-9 lg:justify-self-end w-full max-w-md lg:max-w-sm rounded-2xl border border-white/20 bg-[#0D3F49]/90 p-3.5 sm:p-5 shadow-xl">
-            <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3">
-              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C8A26B]">
-                {currentActData.badge}
-              </span>
-              <span className="font-serif text-base sm:text-lg text-[#EAF7FA]">
-                {currentActData.metricValue}{" "}
-                <span className="font-sans text-[11px] sm:text-xs text-[#9FB7BE]">
-                  {currentActData.metricLabel}
-                </span>
-              </span>
-            </div>
-            <h2 className="font-serif text-lg sm:text-xl font-normal text-[#FFFDFA]">
-              {currentActData.title}
-            </h2>
-            <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#EAF7FA]/85 line-clamp-2 sm:line-clamp-none">
-              {currentActData.subtitle}
-            </p>
+          {/* Right Live Restorative Act Switcher Card — All 3 panels pre-mounted for 0 layout reflow */}
+          <div className="relative z-10 lg:col-span-4 lg:col-start-9 lg:justify-self-end w-full max-w-md lg:max-w-sm rounded-2xl border border-white/20 bg-[#0D3F49] p-3.5 sm:p-5">
+            {scene.acts.map((act, idx) => (
+              <div
+                key={act.id}
+                data-hero-act-panel={String(idx)}
+                className={idx === 0 ? "" : "hidden"}
+              >
+                <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3">
+                  <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C8A26B]">
+                    {act.badge}
+                  </span>
+                  <span className="font-serif text-base sm:text-lg text-[#EAF7FA]">
+                    {act.metricValue}{" "}
+                    <span className="font-sans text-[11px] sm:text-xs text-[#9FB7BE]">
+                      {act.metricLabel}
+                    </span>
+                  </span>
+                </div>
+                <h2 className="font-serif text-lg sm:text-xl font-normal text-[#FFFDFA]">
+                  {act.title}
+                </h2>
+                <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#EAF7FA]/85 line-clamp-2 sm:line-clamp-none">
+                  {act.subtitle}
+                </p>
+              </div>
+            ))}
 
             {/* Interactive Act Pills + Continuous Scroll Progress Hairline */}
-            <div className="mt-3 sm:mt-4 flex items-center gap-1.5" role="tablist" aria-label="Hero 3D Sequence Chapters">
+            <div
+              className="mt-3 sm:mt-4 flex items-center gap-1.5"
+              role="tablist"
+              aria-label="Hero 3D Sequence Chapters"
+            >
               {scene.acts.map((act, idx) => {
-                const isSelected = activeAct === idx;
+                const isSelected = idx === 0;
                 return (
                   <button
                     key={act.id}
                     type="button"
                     role="tab"
+                    data-hero-act-tab={String(idx)}
                     aria-selected={isSelected}
-                    onClick={() => {
-                      setActiveAct(idx as 0 | 1 | 2);
-                      setManualAct(idx as 0 | 1 | 2);
-                    }}
+                    onClick={() => handleManualActClick(idx as 0 | 1 | 2)}
                     className={`flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
                       isSelected
                         ? "bg-[#C8A26B] text-[#13232C]"
@@ -174,14 +223,14 @@ export function HeroSceneSection() {
             <div className="mt-2.5 sm:mt-3 h-1 w-full overflow-hidden rounded-full bg-white/15">
               <div
                 ref={progressBarRef}
-                className="h-full w-full origin-left rounded-full bg-[#C8A26B]"
+                className="h-full w-full origin-left rounded-full bg-[#C8A26B] will-change-transform"
                 style={{ transform: "scaleX(0.05)" }}
               />
             </div>
           </div>
         </div>
 
-        {/* Bottom Editorial Row — Oralxe-Inspired Monumental Headline Left + Caption Right */}
+        {/* Bottom Editorial Row */}
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12 mt-3 lg:mt-0 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-end">
           <div className="lg:col-span-8">
             <h1 className="font-serif text-[28px] sm:text-5xl lg:text-[62px] font-normal uppercase leading-[1.04] tracking-[-0.02em] text-[#FFFDFA]">
@@ -224,7 +273,7 @@ export function HeroSceneSection() {
         </div>
       </div>
 
-      {/* Oralxe-Inspired 4-Column Architectural Metrics Bar on Warm Ivory */}
+      {/* 4-Column Architectural Metrics Bar on Warm Ivory */}
       <div className="border-b border-[#E6E0D6] bg-[#FFFDFA] text-[#13232C]">
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12 py-10 sm:py-12">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#E6E0D6]">

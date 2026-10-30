@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useCallback } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -24,8 +24,50 @@ export function TechnologyWhiteningSection({
   const scene = SCROLL_SCENES["scene-03-scan-whitening"];
   const pinRef = useRef<HTMLDivElement | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
-  const [activeAct, setActiveAct] = useState<0 | 1 | 2>(0);
-  const [manualAct, setManualAct] = useState<0 | 1 | 2 | null>(null);
+  const activeActRef = useRef<0 | 1 | 2>(0);
+
+  // Zero-React-re-render Step switcher during scroll!
+  const applyActDom = useCallback((actIdx: 0 | 1 | 2) => {
+    activeActRef.current = actIdx;
+    const root = pinRef.current;
+    if (!root) return;
+    root.dataset.act = String(actIdx);
+
+    root.querySelectorAll<HTMLButtonElement>("[data-s3-mob-tab]").forEach((btn) => {
+      const active = btn.dataset.s3MobTab === String(actIdx);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+      btn.className = active
+        ? "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-[#63E6D9] text-[#0A1C24]"
+        : "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-white/10 text-[#EAF7FA]";
+    });
+
+    root.querySelectorAll<HTMLButtonElement>("[data-s3-card]").forEach((card) => {
+      const active = card.dataset.s3Card === String(actIdx);
+      card.setAttribute("aria-selected", active ? "true" : "false");
+      card.className = active
+        ? "block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#0A1C24] border-[#63E6D9]/55"
+        : "hidden lg:block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-white/[0.03] border-white/10 hover:bg-white/[0.06]";
+      const desc = card.querySelector<HTMLElement>("[data-s3-desc]");
+      if (desc) desc.classList.toggle("hidden", !active);
+    });
+
+    const ctaSpan = root.querySelector<HTMLElement>("[data-s3-cta-label]");
+    if (ctaSpan) {
+      ctaSpan.textContent = actIdx === 2 ? "Book Whitening" : "Book 3D Scan";
+    }
+  }, []);
+
+  const handleManualActClick = useCallback(
+    (idx: 0 | 1 | 2) => {
+      applyActDom(idx);
+      const stageNode = pinRef.current?.querySelector<
+        HTMLDivElement & { __setSceneProgress?: (p: number, snap?: boolean) => void }
+      >('[data-scene-stage="scene-03-scan-whitening"]');
+      const p = idx === 0 ? 0.04 : idx === 1 ? 0.5 : 0.96;
+      stageNode?.__setSceneProgress?.(p, true);
+    },
+    [applyActDom]
+  );
 
   useGSAP(
     () => {
@@ -38,19 +80,31 @@ export function TechnologyWhiteningSection({
 
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        ScrollTrigger.create({
-          trigger: triggerEl,
-          start: "top top",
-          end: `+=${scene.scrollLengthVh}%`,
-          pin: true,
-          scrub: 0.35,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            stageNode?.__setSceneProgress?.(self.progress);
-          },
-        });
-      });
+      mm.add(
+        {
+          isDesktop:
+            "(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+          isTouch:
+            "(max-width: 1023px) and (prefers-reduced-motion: no-preference), (pointer: coarse) and (prefers-reduced-motion: no-preference)",
+        },
+        (context) => {
+          const isTouch = Boolean(context.conditions?.isTouch);
+          ScrollTrigger.create({
+            trigger: triggerEl,
+            start: "top top",
+            end: `+=${
+              isTouch ? scene.mobileScrollLengthVh : scene.scrollLengthVh
+            }%`,
+            pin: true,
+            scrub: isTouch ? true : 0.35,
+            anticipatePin: 1,
+            fastScrollEnd: true,
+            onUpdate: (self) => {
+              stageNode?.__setSceneProgress?.(self.progress);
+            },
+          });
+        }
+      );
 
       return () => mm.revert();
     },
@@ -63,7 +117,6 @@ export function TechnologyWhiteningSection({
       aria-labelledby="technology-heading"
       style={{ backgroundColor: scene.sectionBgHex, color: "#EAF7FA" }}
     >
-      {/* Descent Gradient: Warm Stone Porcelain #E6DFD1 -> Lagoon #0F5F6E -> Deep Lagoon #0B3A45 -> Calibrated Midnight #010304 */}
       <div
         className="h-28 sm:h-36 w-full"
         style={{
@@ -75,24 +128,24 @@ export function TechnologyWhiteningSection({
 
       <div
         ref={pinRef}
-        className="relative min-h-[100svh] w-full flex items-center pt-22 pb-8 lg:py-0"
+        data-act="0"
+        className="relative min-h-[100svh] w-full flex items-center pt-22 pb-8 lg:py-0 will-change-transform"
         style={{ backgroundColor: scene.sectionBgHex }}
       >
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-10 items-center">
-          {/* Left Column (58% — <= 960 CSS px): Cleaned Scene 03 Canvas Stage on Exact #010304 */}
+          {/* Left Column (58%) */}
           <div className="lg:col-span-7 flex items-center justify-center">
             <div className="w-full max-w-[880px] h-[230px] sm:h-[330px] lg:h-auto lg:aspect-[16/9]">
               <ScrollSequenceStage
                 scene={scene}
                 eager={false}
-                onActChange={setActiveAct}
+                onActChange={applyActDom}
                 progressBarRef={progressBarRef}
-                actStepManual={manualAct}
               />
             </div>
           </div>
 
-          {/* Right Column (42%): Midnight Diagnostic & Whitening Telemetry */}
+          {/* Right Column (42%) */}
           <div className="lg:col-span-5">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#63E6D9]/35 bg-[#63E6D9]/10 px-3 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-[#63E6D9] mb-2 sm:mb-3">
               {scene.eyebrow}
@@ -111,49 +164,51 @@ export function TechnologyWhiteningSection({
             </p>
 
             {/* Mobile Compact Step Tabs (< lg) */}
-            <div className="mt-3 flex lg:hidden items-center gap-1.5" role="tablist" aria-label="Optical Scan Steps Mobile">
+            <div
+              className="mt-3 flex lg:hidden items-center gap-1.5"
+              role="tablist"
+              aria-label="Optical Scan Steps Mobile"
+            >
               {scene.acts.map((act, idx) => (
                 <button
                   key={act.id}
                   type="button"
                   role="tab"
-                  aria-selected={activeAct === idx}
-                  onClick={() => {
-                    setActiveAct(idx as 0 | 1 | 2);
-                    setManualAct(idx as 0 | 1 | 2);
-                  }}
-                  className={`flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer ${
-                    activeAct === idx
-                      ? "bg-[#63E6D9] text-[#0A1C24]"
-                      : "bg-white/10 text-[#EAF7FA]"
-                  }`}
+                  data-s3-mob-tab={String(idx)}
+                  aria-selected={idx === 0}
+                  onClick={() => handleManualActClick(idx as 0 | 1 | 2)}
+                  className={
+                    idx === 0
+                      ? "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-[#63E6D9] text-[#0A1C24]"
+                      : "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-white/10 text-[#EAF7FA]"
+                  }
                 >
                   Step 0{idx + 1}
                 </button>
               ))}
             </div>
 
-            {/* 3 Midnight Chapter Steps (Active-only on mobile so 100svh never clips; all 3 on lg) */}
-            <div className="mt-3 lg:mt-6 space-y-2.5 lg:space-y-3" role="tablist" aria-label="Optical Scan and Whitening Chapters">
+            {/* 3 Pre-Mounted Midnight Chapter Steps */}
+            <div
+              className="mt-3 lg:mt-6 space-y-2.5 lg:space-y-3"
+              role="tablist"
+              aria-label="Optical Scan and Whitening Chapters"
+            >
               {scene.acts.map((act, idx) => {
-                const isActive = activeAct === idx;
+                const isActive = idx === 0;
                 return (
                   <button
                     key={act.id}
                     type="button"
                     role="tab"
+                    data-s3-card={String(idx)}
                     aria-selected={isActive}
-                    onClick={() => {
-                      setActiveAct(idx as 0 | 1 | 2);
-                      setManualAct(idx as 0 | 1 | 2);
-                    }}
-                    className={`${
-                      isActive ? "block" : "hidden lg:block"
-                    } w-full text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer border ${
+                    onClick={() => handleManualActClick(idx as 0 | 1 | 2)}
+                    className={
                       isActive
-                        ? "bg-[#0A1C24] border-[#63E6D9]/55 shadow-[0_0_40px_-15px_rgba(99,230,217,0.3)]"
-                        : "bg-white/[0.03] border-white/10 hover:bg-white/[0.06]"
-                    }`}
+                        ? "block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#0A1C24] border-[#63E6D9]/55"
+                        : "hidden lg:block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-white/[0.03] border-white/10 hover:bg-white/[0.06]"
+                    }
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#63E6D9]">
@@ -169,11 +224,14 @@ export function TechnologyWhiteningSection({
                     <div className="mt-1 font-serif text-lg sm:text-xl text-[#EAF7FA]">
                       {act.title}
                     </div>
-                    {isActive && (
-                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[#9FB7BE]">
-                        {act.subtitle}
-                      </p>
-                    )}
+                    <p
+                      data-s3-desc
+                      className={`${
+                        isActive ? "" : "hidden"
+                      } mt-1.5 text-xs sm:text-sm leading-relaxed text-[#9FB7BE]`}
+                    >
+                      {act.subtitle}
+                    </p>
                   </button>
                 );
               })}
@@ -184,7 +242,7 @@ export function TechnologyWhiteningSection({
               <div className="h-1.5 flex-1 min-w-[120px] overflow-hidden rounded-full bg-white/15">
                 <div
                   ref={progressBarRef}
-                  className="h-full w-full origin-left rounded-full bg-[#63E6D9]"
+                  className="h-full w-full origin-left rounded-full bg-[#63E6D9] will-change-transform"
                   style={{ transform: "scaleX(0.05)" }}
                 />
               </div>
@@ -192,15 +250,13 @@ export function TechnologyWhiteningSection({
                 type="button"
                 onClick={() => {
                   onSelectServiceForBooking(
-                    activeAct === 2 ? "optical-whitening" : "aligners"
+                    activeActRef.current === 2 ? "optical-whitening" : "aligners"
                   );
                   smoothScrollTo("#booking");
                 }}
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-[#63E6D9] px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#0A1C24] hover:bg-[#EAF7FA] transition-colors cursor-pointer whitespace-nowrap"
               >
-                <span>
-                  {activeAct === 2 ? "Book Whitening" : "Book 3D Scan"}
-                </span>
+                <span data-s3-cta-label>Book 3D Scan</span>
                 <ArrowUpRightIcon className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -208,7 +264,6 @@ export function TechnologyWhiteningSection({
         </div>
       </div>
 
-      {/* Rise Transition Back from Midnight #010304 -> Deep Lagoon -> Porcelain #F6F3EE */}
       <div
         className="h-28 sm:h-36 w-full"
         style={{

@@ -17,6 +17,11 @@ import { BookingAndFooterSection } from "@/components/BookingAndFooterSection";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
+  // Prevent iOS Safari / Android Chrome URL-bar collapse from triggering mid-swipe ScrollTrigger.refresh() jank
+  ScrollTrigger.config({
+    ignoreMobileResize: true,
+    limitCallbacks: true,
+  });
 }
 
 export function StudioClientShell() {
@@ -27,9 +32,17 @@ export function StudioClientShell() {
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
+    const isCoarseTouch = window.matchMedia("(pointer: coarse)").matches;
 
-    if (reducedMotion) {
+    // On touch phones/tablets, let native 60/120Hz hardware touch inertia run directly
+    // without a redundant Lenis rAF ticker competing on the main thread.
+    if (reducedMotion || isCoarseTouch) {
       registerLenis(null);
+      if (document.fonts?.ready) {
+        document.fonts.ready.then(() => {
+          ScrollTrigger.refresh();
+        });
+      }
       return;
     }
 

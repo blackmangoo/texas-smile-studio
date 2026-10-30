@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useCallback } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -24,8 +24,43 @@ export function ImplantCraftsmanshipSection({
   const scene = SCROLL_SCENES["scene-02-implant"];
   const pinRef = useRef<HTMLDivElement | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
-  const [activeAct, setActiveAct] = useState<0 | 1 | 2>(0);
-  const [manualAct, setManualAct] = useState<0 | 1 | 2 | null>(null);
+
+  // Zero-React-re-render Act switcher during scroll!
+  const applyActDom = useCallback((actIdx: 0 | 1 | 2) => {
+    const root = pinRef.current;
+    if (!root) return;
+    root.dataset.act = String(actIdx);
+
+    root.querySelectorAll<HTMLButtonElement>("[data-s2-mob-tab]").forEach((btn) => {
+      const active = btn.dataset.s2MobTab === String(actIdx);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+      btn.className = active
+        ? "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-[#0F5F6E] text-[#FFFDFA]"
+        : "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-[#13232C]/10 text-[#13232C]";
+    });
+
+    root.querySelectorAll<HTMLButtonElement>("[data-s2-card]").forEach((card) => {
+      const active = card.dataset.s2Card === String(actIdx);
+      card.setAttribute("aria-selected", active ? "true" : "false");
+      card.className = active
+        ? "block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#FFFDFA] border-[#8A6631]/50"
+        : "hidden lg:block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#FFFDFA]/45 border-[#13232C]/10 hover:bg-[#FFFDFA]/75";
+      const desc = card.querySelector<HTMLElement>("[data-s2-desc]");
+      if (desc) desc.classList.toggle("hidden", !active);
+    });
+  }, []);
+
+  const handleManualActClick = useCallback(
+    (idx: 0 | 1 | 2) => {
+      applyActDom(idx);
+      const stageNode = pinRef.current?.querySelector<
+        HTMLDivElement & { __setSceneProgress?: (p: number, snap?: boolean) => void }
+      >('[data-scene-stage="scene-02-implant"]');
+      const p = idx === 0 ? 0.04 : idx === 1 ? 0.5 : 0.96;
+      stageNode?.__setSceneProgress?.(p, true);
+    },
+    [applyActDom]
+  );
 
   useGSAP(
     () => {
@@ -38,19 +73,31 @@ export function ImplantCraftsmanshipSection({
 
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        ScrollTrigger.create({
-          trigger: triggerEl,
-          start: "top top",
-          end: `+=${scene.scrollLengthVh}%`,
-          pin: true,
-          scrub: 0.35,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            stageNode?.__setSceneProgress?.(self.progress);
-          },
-        });
-      });
+      mm.add(
+        {
+          isDesktop:
+            "(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+          isTouch:
+            "(max-width: 1023px) and (prefers-reduced-motion: no-preference), (pointer: coarse) and (prefers-reduced-motion: no-preference)",
+        },
+        (context) => {
+          const isTouch = Boolean(context.conditions?.isTouch);
+          ScrollTrigger.create({
+            trigger: triggerEl,
+            start: "top top",
+            end: `+=${
+              isTouch ? scene.mobileScrollLengthVh : scene.scrollLengthVh
+            }%`,
+            pin: true,
+            scrub: isTouch ? true : 0.35,
+            anticipatePin: 1,
+            fastScrollEnd: true,
+            onUpdate: (self) => {
+              stageNode?.__setSceneProgress?.(self.progress);
+            },
+          });
+        }
+      );
 
       return () => mm.revert();
     },
@@ -63,7 +110,6 @@ export function ImplantCraftsmanshipSection({
       aria-labelledby="craftsmanship-heading"
       style={{ backgroundColor: scene.sectionBgHex, color: "#13232C" }}
     >
-      {/* Top Blend Transition from Porcelain #F6F3EE into Calibrated Stone-Porcelain #E6DFD1 */}
       <div
         className="h-16 w-full"
         style={{
@@ -74,11 +120,12 @@ export function ImplantCraftsmanshipSection({
 
       <div
         ref={pinRef}
-        className="relative min-h-[100svh] w-full flex items-center pt-22 pb-8 lg:py-0"
+        data-act="0"
+        className="relative min-h-[100svh] w-full flex items-center pt-22 pb-8 lg:py-0 will-change-transform"
         style={{ backgroundColor: scene.sectionBgHex }}
       >
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-10 items-center">
-          {/* Left Column (42%): Editorial Narrative & 3 Interactive Engineering Acts */}
+          {/* Left Column (42%) */}
           <div className="lg:col-span-5 order-2 lg:order-1">
             <span className="inline-block text-[11px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-[#8A6631] mb-1.5 sm:mb-2.5">
               {scene.eyebrow}
@@ -96,49 +143,51 @@ export function ImplantCraftsmanshipSection({
             </p>
 
             {/* Mobile Compact Act Tabs (< lg) */}
-            <div className="mt-3 flex lg:hidden items-center gap-1.5" role="tablist" aria-label="Implant Assembly Chapters Mobile">
+            <div
+              className="mt-3 flex lg:hidden items-center gap-1.5"
+              role="tablist"
+              aria-label="Implant Assembly Chapters Mobile"
+            >
               {scene.acts.map((act, idx) => (
                 <button
                   key={act.id}
                   type="button"
                   role="tab"
-                  aria-selected={activeAct === idx}
-                  onClick={() => {
-                    setActiveAct(idx as 0 | 1 | 2);
-                    setManualAct(idx as 0 | 1 | 2);
-                  }}
-                  className={`flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer ${
-                    activeAct === idx
-                      ? "bg-[#0F5F6E] text-[#FFFDFA]"
-                      : "bg-[#13232C]/10 text-[#13232C]"
-                  }`}
+                  data-s2-mob-tab={String(idx)}
+                  aria-selected={idx === 0}
+                  onClick={() => handleManualActClick(idx as 0 | 1 | 2)}
+                  className={
+                    idx === 0
+                      ? "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-[#0F5F6E] text-[#FFFDFA]"
+                      : "flex-1 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer bg-[#13232C]/10 text-[#13232C]"
+                  }
                 >
                   Act 0{idx + 1}
                 </button>
               ))}
             </div>
 
-            {/* 3 Engineering Act Cards (Active-only on mobile so 100svh never overflows; all 3 on lg) */}
-            <div className="mt-3 lg:mt-6 space-y-2.5 lg:space-y-3" role="tablist" aria-label="Implant Assembly Chapters">
+            {/* 3 Pre-Mounted Engineering Act Cards */}
+            <div
+              className="mt-3 lg:mt-6 space-y-2.5 lg:space-y-3"
+              role="tablist"
+              aria-label="Implant Assembly Chapters"
+            >
               {scene.acts.map((act, idx) => {
-                const isActive = activeAct === idx;
+                const isActive = idx === 0;
                 return (
                   <button
                     key={act.id}
                     type="button"
                     role="tab"
+                    data-s2-card={String(idx)}
                     aria-selected={isActive}
-                    onClick={() => {
-                      setActiveAct(idx as 0 | 1 | 2);
-                      setManualAct(idx as 0 | 1 | 2);
-                    }}
-                    className={`${
-                      isActive ? "block" : "hidden lg:block"
-                    } w-full text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer border ${
+                    onClick={() => handleManualActClick(idx as 0 | 1 | 2)}
+                    className={
                       isActive
-                        ? "bg-[#FFFDFA] border-[#8A6631]/50 shadow-[0_20px_45px_-25px_rgba(15,95,110,0.28)]"
-                        : "bg-[#FFFDFA]/45 border-[#13232C]/10 hover:bg-[#FFFDFA]/75"
-                    }`}
+                        ? "block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#FFFDFA] border-[#8A6631]/50"
+                        : "hidden lg:block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#FFFDFA]/45 border-[#13232C]/10 hover:bg-[#FFFDFA]/75"
+                    }
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8A6631]">
@@ -154,22 +203,25 @@ export function ImplantCraftsmanshipSection({
                     <div className="mt-1 font-serif text-lg sm:text-xl text-[#13232C]">
                       {act.title}
                     </div>
-                    {isActive && (
-                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[#4B5D66]">
-                        {act.subtitle}
-                      </p>
-                    )}
+                    <p
+                      data-s2-desc
+                      className={`${
+                        isActive ? "" : "hidden"
+                      } mt-1.5 text-xs sm:text-sm leading-relaxed text-[#4B5D66]`}
+                    >
+                      {act.subtitle}
+                    </p>
                   </button>
                 );
               })}
             </div>
 
-            {/* Scroll Progress Hairline + Direct Implant Consultation CTA */}
+            {/* Progress Bar + CTA */}
             <div className="mt-4 lg:mt-5 flex items-center gap-4">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#13232C]/15">
                 <div
                   ref={progressBarRef}
-                  className="h-full w-full origin-left rounded-full bg-[#0F5F6E]"
+                  className="h-full w-full origin-left rounded-full bg-[#0F5F6E] will-change-transform"
                   style={{ transform: "scaleX(0.05)" }}
                 />
               </div>
@@ -187,15 +239,14 @@ export function ImplantCraftsmanshipSection({
             </div>
           </div>
 
-          {/* Right Column (58% — <= 960 CSS px so 1920x1080 never upscales on 2x retina): Seamless Canvas Stage */}
+          {/* Right Column (58%) */}
           <div className="lg:col-span-7 order-1 lg:order-2 flex items-center justify-center">
             <div className="w-full max-w-[880px] h-[240px] sm:h-[340px] lg:h-auto lg:aspect-[16/9]">
               <ScrollSequenceStage
                 scene={scene}
                 eager={false}
-                onActChange={setActiveAct}
+                onActChange={applyActDom}
                 progressBarRef={progressBarRef}
-                actStepManual={manualAct}
               />
             </div>
           </div>

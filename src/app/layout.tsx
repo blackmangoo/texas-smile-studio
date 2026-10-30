@@ -138,6 +138,14 @@ export default function RootLayout({
           as="image"
           href="/frames/scene-01-hero/poster-desktop.webp"
           type="image/webp"
+          media="(min-width: 768px)"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/frames/scene-01-hero/poster-mobile.webp"
+          type="image/webp"
+          media="(max-width: 767px)"
         />
         <script
           type="application/ld+json"
