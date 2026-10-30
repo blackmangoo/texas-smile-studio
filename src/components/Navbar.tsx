@@ -51,7 +51,7 @@ export function Navbar() {
     <header
       ref={headerRef}
       data-scrolled="false"
-      className="fixed top-0 left-0 right-0 z-50 bg-transparent text-[#FFFDFA] transition-colors duration-300 data-[scrolled=true]:bg-[#13232C]/95 data-[scrolled=true]:backdrop-blur-md data-[scrolled=true]:border-b data-[scrolled=true]:border-white/10 data-[scrolled=true]:shadow-lg"
+      className="fixed top-0 left-0 right-0 z-50 bg-transparent text-[#FFFDFA] transition-colors duration-200 data-[scrolled=true]:bg-[#13232C] data-[scrolled=true]:border-b data-[scrolled=true]:border-white/10 data-[scrolled=true]:shadow-lg"
     >
       <div className="mx-auto flex h-16 lg:h-[68px] max-w-[1440px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-10 xl:px-12">
         {/* Brand Wordmark with Custom Sculpted Medallion Emblem */}

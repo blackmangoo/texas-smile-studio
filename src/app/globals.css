@@ -48,6 +48,7 @@ html {
     position: sticky;
     top: 0;
     height: 100svh;
+    contain: layout style paint;
   }
 }
 
@@ -58,6 +59,7 @@ html {
   .scene-sticky-stage {
     position: relative;
     height: 100vh;
+    contain: layout style paint;
   }
 }
 

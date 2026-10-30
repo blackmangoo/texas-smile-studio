@@ -26,7 +26,7 @@ interface MobilePackIndex {
 
 interface StreamingMobilePack {
   meta: MobilePackIndex;
-  bytes: Uint8Array;
+  bytes: Uint8Array<ArrayBuffer>;
   receivedBytes: number;
   complete: boolean;
   listeners: Set<() => void>;
@@ -65,7 +65,7 @@ function openStreamingMobilePack(
 
       const state: StreamingMobilePack = {
         meta,
-        bytes: new Uint8Array(meta.totalBytes),
+        bytes: new Uint8Array(new ArrayBuffer(meta.totalBytes)),
         receivedBytes: 0,
         complete: false,
         listeners: new Set(),
@@ -295,6 +295,7 @@ export function ScrollSequenceStage({
         posterHiddenRef.current = true;
         if (posterElRef.current) {
           posterElRef.current.style.opacity = "0";
+          posterElRef.current.style.display = "none";
         }
       }
     },
@@ -325,7 +326,6 @@ export function ScrollSequenceStage({
       targetProgressRef.current = p;
       targetFrameRef.current = Math.min(total - 1, Math.round(p * (total - 1)));
 
-      wakeDecoderRef.current?.();
       scheduleDraw(syncInRaf);
 
       const nextAct: 0 | 1 | 2 = p < 0.34 ? 0 : p < 0.68 ? 1 : 2;
@@ -441,14 +441,18 @@ export function ScrollSequenceStage({
     };
 
     if (useMobilePack) {
-      // STREAMING MOBILE V3 PACK ENGINE + ADAPTIVE SCROLL-AWARE DECODE BUDGET
+      // STREAMING MOBILE V3 PACK ENGINE + ZERO-SCROLL-CONTENTION IDLE DECODER
       let packState: StreamingMobilePack | null = null;
       let isNearViewport = eager;
+      let isOnScreen = eager;
       let activeWorkers = 0;
       let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+      let evictTimer: ReturnType<typeof setTimeout> | null = null;
 
+      // 49 permanent stride-3 keyframes (every 3rd frame) stay warm across all scenes (<0.9s initial decode),
+      // while all 144 frames decode rapidly whenever touch motion pauses >=110ms near the scene!
       const permanentStrideSet = new Set<number>();
-      for (let i = 0; i < total; i += 4) permanentStrideSet.add(i);
+      for (let i = 0; i < total; i += 3) permanentStrideSet.add(i);
       permanentStrideSet.add(total - 1);
 
       const isFrameReceived = (
@@ -460,62 +464,47 @@ export function ScrollSequenceStage({
         return entry.o + entry.l <= st.receivedBytes;
       };
 
-      const evictDistantFineFrames = () => {
-        if (isNearViewport) return;
-        for (let i = 0; i < total; i++) {
-          if (!permanentStrideSet.has(i) && loadedMaskRef.current[i] === 1) {
-            const f = framesRef.current[i];
-            if (f && "close" in f) f.close();
-            framesRef.current[i] = null;
-            loadedMaskRef.current[i] = 0;
+      const scheduleSafeEvict = () => {
+        if (evictTimer !== null) return;
+        const runEvict = () => {
+          evictTimer = null;
+          if (cancelled || isNearViewport) return;
+          // Never run 95x ImageBitmap.close() while user is actively scrolling!
+          if (performance.now() - globalLastScrollTs < 160) {
+            evictTimer = setTimeout(runEvict, 160);
+            return;
           }
-        }
-        if (
-          drawnFrameRef.current >= 0 &&
-          !permanentStrideSet.has(drawnFrameRef.current)
-        ) {
-          drawnFrameRef.current = -1;
-          scheduleDraw(true);
-        }
+          for (let i = 0; i < total; i++) {
+            if (!permanentStrideSet.has(i) && loadedMaskRef.current[i] === 1) {
+              const f = framesRef.current[i];
+              if (f && "close" in f) f.close();
+              framesRef.current[i] = null;
+              loadedMaskRef.current[i] = 0;
+            }
+          }
+          if (
+            drawnFrameRef.current >= 0 &&
+            !permanentStrideSet.has(drawnFrameRef.current)
+          ) {
+            drawnFrameRef.current = -1;
+            scheduleDraw(true);
+          }
+        };
+        evictTimer = setTimeout(runEvict, 160);
       };
 
-      /**
-       * Picks next available received frame:
-       *  - `playheadOnly = true` (during active touch scroll): ONLY decodes if an immediate
-       *    `[target - 1 .. target + 3]` playhead frame is missing, keeping scroll at 60 FPS!
-       *  - `playheadOnly = false` (idle >= 75ms): decodes all 144 frames coarse-to-fine.
-       */
-      const pickNextFrame = (
-        st: StreamingMobilePack,
-        playheadOnly: boolean
-      ): number => {
+      const countLoadedFrames = (): number => {
+        let n = 0;
+        const m = loadedMaskRef.current;
+        for (let i = 0; i < m.length; i++) n += m[i];
+        return n;
+      };
+
+      const pickNextFrame = (st: StreamingMobilePack): number => {
         const count = Math.min(total, st.meta.frames.length);
         const target = targetFrameRef.current;
 
-        if (isNearViewport) {
-          const lo = Math.max(0, target - 1);
-          const hi = Math.min(count - 1, target + 3);
-          let bestImmediate = -1;
-          let bestImmediateDist = Infinity;
-          for (let i = lo; i <= hi; i++) {
-            if (
-              loadedMaskRef.current[i] === 0 &&
-              inFlightMaskRef.current[i] === 0 &&
-              isFrameReceived(st, i)
-            ) {
-              const d = Math.abs(i - target);
-              if (d < bestImmediateDist) {
-                bestImmediateDist = d;
-                bestImmediate = i;
-              }
-            }
-          }
-          if (bestImmediate >= 0) return bestImmediate;
-        }
-
-        if (playheadOnly) return -1;
-
-        const passes = isNearViewport ? [16, 8, 4, 2, 1] : [16, 8, 4];
+        const passes = isNearViewport ? [15, 6, 3, 1] : [15, 6, 3];
         for (const step of passes) {
           let bestIdx = -1;
           let bestDist = Infinity;
@@ -533,7 +522,7 @@ export function ScrollSequenceStage({
             }
           }
           if (
-            step === 4 &&
+            step === 3 &&
             bestIdx < 0 &&
             loadedMaskRef.current[count - 1] === 0 &&
             inFlightMaskRef.current[count - 1] === 0 &&
@@ -549,47 +538,49 @@ export function ScrollSequenceStage({
       const spawnDecodeWorkers = () => {
         if (cancelled || !packState) return;
         const st = packState;
+        const loadedSoFar = countLoadedFrames();
         const activelyScrolling =
-          performance.now() - globalLastScrollTs < 75;
-        const maxWorkers = activelyScrolling ? 1 : 4;
+          performance.now() - globalLastScrollTs < 110;
 
-        if (activelyScrolling && resumeTimer === null) {
-          resumeTimer = setTimeout(() => {
-            resumeTimer = null;
-            spawnDecodeWorkers();
-          }, 85);
+        // While user's finger / momentum is moving, yield 100% of CPU & GPU texture bus to 60/120Hz canvas drawing
+        // (only allow 1 emergency bootstrap worker if THIS visible on-screen scene has < 6 frames loaded)
+        const allowEmergencyBootstrap = isOnScreen && loadedSoFar < 6;
+        if (activelyScrolling && !allowEmergencyBootstrap) {
+          if (resumeTimer === null) {
+            resumeTimer = setTimeout(() => {
+              resumeTimer = null;
+              spawnDecodeWorkers();
+            }, 115);
+          }
+          return;
         }
+
+        const maxWorkers = activelyScrolling ? 1 : 4;
 
         const runWorker = async () => {
           activeWorkers++;
           try {
             while (!cancelled) {
               const scrollingNow =
-                performance.now() - globalLastScrollTs < 75;
-              if (scrollingNow && activeWorkers > 1) {
-                break;
-              }
-              const nextIdx = pickNextFrame(st, scrollingNow);
-              if (nextIdx < 0) {
-                if (scrollingNow && resumeTimer === null) {
+                performance.now() - globalLastScrollTs < 110;
+              if (scrollingNow && (!isOnScreen || countLoadedFrames() >= 6)) {
+                if (resumeTimer === null) {
                   resumeTimer = setTimeout(() => {
                     resumeTimer = null;
                     spawnDecodeWorkers();
-                  }, 85);
+                  }, 115);
                 }
                 break;
               }
+              const nextIdx = pickNextFrame(st);
+              if (nextIdx < 0) break;
+
               inFlightMaskRef.current[nextIdx] = 1;
               const entry = st.meta.frames[nextIdx];
               const view = st.bytes.subarray(entry.o, entry.o + entry.l);
               const sliceBlob = new Blob([view], { type: "image/webp" });
               const bmp = await decodeBlob(sliceBlob);
               storeDecodedFrame(nextIdx, bmp);
-
-              if (scrollingNow) {
-                // Yield one paint frame so touch scroll stays 60/120 FPS
-                await new Promise((r) => requestAnimationFrame(() => r(null)));
-              }
             }
           } finally {
             activeWorkers--;
@@ -597,7 +588,7 @@ export function ScrollSequenceStage({
         };
 
         while (activeWorkers < maxWorkers) {
-          const probe = pickNextFrame(st, activelyScrolling);
+          const probe = pickNextFrame(st);
           if (probe < 0) break;
           void runWorker();
         }
@@ -633,15 +624,30 @@ export function ScrollSequenceStage({
       void startMobilePack(eager);
 
       const el = containerRef.current;
+      let screenIo: IntersectionObserver | null = null;
       let preloadIo: IntersectionObserver | null = null;
       let evictIo: IntersectionObserver | null = null;
 
       if (el && typeof IntersectionObserver !== "undefined") {
+        screenIo = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              isOnScreen = entry.isIntersecting;
+            }
+          },
+          { rootMargin: "10% 0px 10% 0px" }
+        );
+        screenIo.observe(el);
+
         preloadIo = new IntersectionObserver(
           (entries) => {
             for (const entry of entries) {
               if (entry.isIntersecting) {
                 isNearViewport = true;
+                if (evictTimer) {
+                  clearTimeout(evictTimer);
+                  evictTimer = null;
+                }
                 if (!packState) {
                   void startMobilePack(true);
                 } else {
@@ -650,7 +656,7 @@ export function ScrollSequenceStage({
               }
             }
           },
-          { rootMargin: "260% 0px 260% 0px" }
+          { rootMargin: "180% 0px 180% 0px" }
         );
         preloadIo.observe(el);
 
@@ -659,11 +665,11 @@ export function ScrollSequenceStage({
             for (const entry of entries) {
               if (!entry.isIntersecting) {
                 isNearViewport = false;
-                evictDistantFineFrames();
+                scheduleSafeEvict();
               }
             }
           },
-          { rootMargin: "400% 0px 400% 0px" }
+          { rootMargin: "320% 0px 320% 0px" }
         );
         evictIo.observe(el);
       }
@@ -672,9 +678,11 @@ export function ScrollSequenceStage({
         cancelled = true;
         wakeDecoderRef.current = null;
         if (resumeTimer) clearTimeout(resumeTimer);
+        if (evictTimer) clearTimeout(evictTimer);
         if (packState && onChunkListener) {
           packState.listeners.delete(onChunkListener);
         }
+        screenIo?.disconnect();
         preloadIo?.disconnect();
         evictIo?.disconnect();
         if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
@@ -832,13 +840,13 @@ export function ScrollSequenceStage({
 
       <canvas
         ref={canvasRef}
-        className="pointer-events-none block w-full h-full object-contain"
+        className="pointer-events-none block w-full h-full object-contain transform-gpu"
       />
 
       {/* Static GPU-cached radial feather vignette — zero per-frame canvas mask recomposition */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 transform-gpu"
         style={{ background: vignetteOverlayCss }}
       />
 

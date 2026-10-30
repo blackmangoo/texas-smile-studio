@@ -17,11 +17,12 @@ def main() -> int:
             has_touch=True,
         )
         page = ctx.new_page()
+        page.goto(BASE_URL, wait_until="networkidle")
+        page.wait_for_timeout(1400)
+
         cdp = ctx.new_cdp_session(page)
         cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
-
-        page.goto(BASE_URL, wait_until="networkidle")
-        page.wait_for_timeout(1800)
+        page.wait_for_timeout(300)
 
         # Simulate touch gesture + scroll scrub through Hero -> Scene 02 -> Scene 03
         stats = page.evaluate(

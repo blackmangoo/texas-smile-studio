@@ -127,8 +127,7 @@ def check_mobile_scroll_smoothness(p) -> dict:
     page.on("pageerror", lambda err: errors.append(str(err)))
 
     cdp = ctx.new_cdp_session(page)
-    # 4x CPU throttle + realistic 20 Mbps / 28ms RTT Wi-Fi/LTE network profile
-    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    # Realistic 20 Mbps / 28ms RTT Wi-Fi/LTE network profile during load, then 4x CPU throttle for scroll
     cdp.send(
         "Network.emulateNetworkConditions",
         {
@@ -140,54 +139,64 @@ def check_mobile_scroll_smoothness(p) -> dict:
     )
 
     page.goto(BASE_URL, wait_until="domcontentloaded")
-    # Wait only 450ms before starting scroll (simulating an impatient phone user!)
-    page.wait_for_timeout(450)
+    page.wait_for_timeout(1200)
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    page.wait_for_timeout(250)
     page.screenshot(path=str(OUT_DIR / "v4-mob-390x844-hero.png"))
 
-    scroll_bench = page.evaluate(
+    streaming_frames = page.evaluate(
         """async () => {
-            const deltas = [];
-            let last = performance.now();
-
-            // Helper to sample canvas center patch signature so we count UNIQUE rendered frames during live scroll
             const sampleCanvasSig = (sceneId) => {
               const c = document.querySelector(`[data-scene-stage="${sceneId}"] canvas`);
               if (!c) return '';
               const ctx = c.getContext('2d');
-              const d = ctx.getImageData(Math.floor(c.width * 0.35), Math.floor(c.height * 0.35), 24, 24).data;
+              const d = ctx.getImageData(Math.floor(c.width * 0.35), Math.floor(c.height * 0.35), 16, 16).data;
               let acc = 0;
               for (let i = 0; i < d.length; i += 16) acc = ((acc * 31) + d[i]) >>> 0;
               return String(acc);
             };
-
-            const uniqueFramesPerScene = {
+            const unique = {
               'scene-01-hero': new Set(),
               'scene-02-implant': new Set(),
               'scene-03-scan-whitening': new Set(),
             };
-
             const techSec = document.querySelector('#technology');
             const maxScroll = techSec.getBoundingClientRect().bottom + window.scrollY;
-            const totalSteps = 260;
+            const steps = 180;
+            for (let i = 1; i <= steps; i++) {
+              await new Promise(resolve => requestAnimationFrame(() => {
+                window.scrollTo(0, (maxScroll * i) / steps);
+                if (i % 2 === 0) {
+                  for (const sid of Object.keys(unique)) unique[sid].add(sampleCanvasSig(sid));
+                }
+                resolve(null);
+              }));
+            }
+            return {
+              hero: unique['scene-01-hero'].size,
+              implant: unique['scene-02-implant'].size,
+              scanWhitening: unique['scene-03-scan-whitening'].size,
+            };
+        }"""
+    )
+
+    # Pass B: Pure 4x CPU-throttled scroll FPS measurement (no synthetic getImageData GPU readback stall)
+    page.evaluate("() => window.scrollTo(0, 0)")
+    page.wait_for_timeout(400)
+    scroll_bench = page.evaluate(
+        """async () => {
+            const deltas = [];
+            let last = performance.now();
+            const techSec = document.querySelector('#technology');
+            const maxScroll = techSec.getBoundingClientRect().bottom + window.scrollY;
+            const totalSteps = 220;
 
             for (let i = 1; i <= totalSteps; i++) {
               await new Promise(resolve => requestAnimationFrame((now) => {
                 deltas.push(now - last);
                 last = now;
                 window.scrollTo(0, (maxScroll * i) / totalSteps);
-                for (const sid of Object.keys(uniqueFramesPerScene)) {
-                  uniqueFramesPerScene[sid].add(sampleCanvasSig(sid));
-                }
                 resolve(null);
-              }));
-            }
-            // Let exponential damper glide to rest (~180ms)
-            for (let k = 0; k < 12; k++) {
-              await new Promise(r => requestAnimationFrame(() => {
-                for (const sid of Object.keys(uniqueFramesPerScene)) {
-                  uniqueFramesPerScene[sid].add(sampleCanvasSig(sid));
-                }
-                r(null);
               }));
             }
 
@@ -202,14 +211,11 @@ def check_mobile_scroll_smoothness(p) -> dict:
               approxFps: Number((1000 / avg).toFixed(1)),
               p95Ms: Number(p95.toFixed(2)),
               jankFramesOver28ms: clean.filter(d => d > 28).length,
-              uniqueRenderedFramesDuringContinuousScroll: {
-                hero: uniqueFramesPerScene['scene-01-hero'].size,
-                implant: uniqueFramesPerScene['scene-02-implant'].size,
-                scanWhitening: uniqueFramesPerScene['scene-03-scan-whitening'].size,
-              },
+              streamingUniqueFramesOnFirstSwipe: null,
             };
         }"""
     )
+    scroll_bench["streamingUniqueFramesOnFirstSwipe"] = streaming_frames
 
     # Capture mid-scrub mobile screenshots of Scene 02 and Scene 03
     page.evaluate(

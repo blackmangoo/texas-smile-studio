@@ -31,10 +31,8 @@ interface UseSceneScrollScrubOptions {
  *  - Desktop / Laptop (`(min-width: 1024px) and (hover: hover)`):
  *      GSAP ScrollTrigger `pin: true, scrub: 0.35` paired with Lenis smooth wheel/trackpad inertia.
  *  - Phone / Tablet (`(max-width: 1023px)` or `(hover: none) and (pointer: coarse)`):
- *      Native GPU compositor CSS `position: sticky` track driven by a frame-rate-independent
- *      exponential critically-damped `requestAnimationFrame` interpolator (`1 - exp(-15 * dt)`).
- *      Eliminates `position: fixed` reparenting jumps AND GSAP scroll-tween phase jitter on
- *      60Hz/120Hz iOS Safari & Android Chrome, auto-sleeping at 0% CPU when settled.
+ *      Native GPU compositor CSS `position: sticky` track driven by a ZERO-REFLOW (`window.scrollY`
+ *      against `ResizeObserver`-cached offsets) frame-rate-independent exponential `rAF` damper.
  */
 export function useSceneScrollScrub({
   sceneId,
@@ -77,7 +75,7 @@ export function useSceneScrollScrub({
       return () => trigger.kill();
     });
 
-    // 2. Phones & Touch Tablets (`<= 1023px` or `(hover: none) and (pointer: coarse)`)
+    // 2. Phones & Touch Tablets — Zero-Reflow `window.scrollY` Exponential Damper
     mm.add(
       `(max-width: 1023px) and (prefers-reduced-motion: no-preference), (hover: none) and (pointer: coarse) and (prefers-reduced-motion: no-preference)`,
       () => {
@@ -85,34 +83,35 @@ export function useSceneScrollScrub({
         let lastFrameTs = 0;
         let lastScrollEventTs = 0;
         let smoothed = -1;
-        let stageHeight = stageContainerEl.offsetHeight || window.innerHeight;
+
+        // Cached layout geometry — updated ONLY on ResizeObserver / orientationchange, NEVER during scroll!
+        let trackTopDoc = 0;
+        let travelPx = 1;
+        let stageHeight = window.innerHeight;
+
+        const measureGeometry = () => {
+          const rect = trackEl.getBoundingClientRect();
+          const sy = window.scrollY;
+          stageHeight = stageContainerEl.offsetHeight || window.innerHeight;
+          trackTopDoc = rect.top + sy;
+          travelPx = Math.max(1, rect.height - stageHeight);
+        };
+
+        measureGeometry();
 
         const ro =
           typeof ResizeObserver !== "undefined"
             ? new ResizeObserver(() => {
-                stageHeight =
-                  stageContainerEl.offsetHeight || window.innerHeight;
+                measureGeometry();
               })
             : null;
-        ro?.observe(stageContainerEl);
-
-        const computeRawProgress = (): {
-          raw: number;
-          inRange: boolean;
-        } => {
-          // Read geometry at the start of rAF before any DOM mutations (clean layout, zero forced reflow)
-          const rect = trackEl.getBoundingClientRect();
-          const travel = Math.max(1, rect.height - stageHeight);
-          const raw = Math.max(0, Math.min(1, -rect.top / travel));
-          const inRange =
-            rect.bottom > -stageHeight * 0.5 &&
-            rect.top < stageHeight * 1.5;
-          return { raw, inRange };
-        };
+        ro?.observe(document.documentElement);
+        ro?.observe(trackEl);
 
         const tick = (now: number) => {
           rafId = 0;
-          const { raw, inRange } = computeRawProgress();
+          const sy = window.scrollY;
+          const raw = Math.max(0, Math.min(1, (sy - trackTopDoc) / travelPx));
 
           if (smoothed < 0) {
             smoothed = raw;
@@ -121,55 +120,81 @@ export function useSceneScrollScrub({
               lastFrameTs > 0
                 ? Math.min(0.05, Math.max(0.004, (now - lastFrameTs) * 0.001))
                 : 1 / 60;
-            // Frame-rate-independent exponential glide (tau ~ 67ms):
-            // silky frame-by-frame stepping on both 60Hz and 120Hz ProMotion touchscreens
-            const alpha = 1 - Math.exp(-15 * dt);
+            const alpha = 1 - Math.exp(-16 * dt);
             smoothed += (raw - smoothed) * alpha;
           }
           lastFrameTs = now;
 
           const diff = Math.abs(raw - smoothed);
-          const recentlyScrolled = now - lastScrollEventTs < 120;
+          const recentlyScrolled = now - lastScrollEventTs < 100;
 
-          if (diff < 0.0002 && !recentlyScrolled) {
+          if (diff < 0.00025 && !recentlyScrolled) {
             smoothed = raw;
           }
 
           if (!stageNode) stageNode = resolveStageNode();
           stageNode?.__setSceneProgress?.(smoothed, true);
 
-          if (inRange && (diff >= 0.0002 || recentlyScrolled)) {
+          const inActiveBand =
+            sy >= trackTopDoc - stageHeight * 0.75 &&
+            sy <= trackTopDoc + travelPx + stageHeight * 0.75;
+
+          if (inActiveBand && (diff >= 0.00025 || recentlyScrolled)) {
             rafId = requestAnimationFrame(tick);
           } else {
             lastFrameTs = 0;
           }
         };
 
-        const wakeLoop = () => {
+        const onScroll = () => {
+          const sy = window.scrollY;
+          // Fast bailout for off-screen scenes: zero rAF wakeups when scene isn't near viewport!
+          if (
+            sy < trackTopDoc - stageHeight * 0.9 ||
+            sy > trackTopDoc + travelPx + stageHeight * 0.9
+          ) {
+            if (smoothed > 0 && sy < trackTopDoc - stageHeight * 0.9) {
+              smoothed = 0;
+              stageNode?.__setSceneProgress?.(0, true);
+            } else if (
+              smoothed < 1 &&
+              sy > trackTopDoc + travelPx + stageHeight * 0.9
+            ) {
+              smoothed = 1;
+              stageNode?.__setSceneProgress?.(1, true);
+            }
+            return;
+          }
           lastScrollEventTs = performance.now();
           if (rafId === 0) {
             rafId = requestAnimationFrame(tick);
           }
         };
 
+        const onOrientation = () => {
+          measureGeometry();
+          onScroll();
+        };
+
         // Sync initial resting position immediately on mount
-        const init = computeRawProgress();
-        smoothed = init.raw;
+        const initRaw = Math.max(
+          0,
+          Math.min(1, (window.scrollY - trackTopDoc) / travelPx)
+        );
+        smoothed = initRaw;
         if (!stageNode) stageNode = resolveStageNode();
         stageNode?.__setSceneProgress?.(smoothed, true);
 
-        window.addEventListener("scroll", wakeLoop, { passive: true });
-        window.addEventListener("touchmove", wakeLoop, { passive: true });
-        window.addEventListener("orientationchange", wakeLoop, {
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("orientationchange", onOrientation, {
           passive: true,
         });
 
         return () => {
           if (rafId) cancelAnimationFrame(rafId);
           ro?.disconnect();
-          window.removeEventListener("scroll", wakeLoop);
-          window.removeEventListener("touchmove", wakeLoop);
-          window.removeEventListener("orientationchange", wakeLoop);
+          window.removeEventListener("scroll", onScroll);
+          window.removeEventListener("orientationchange", onOrientation);
         };
       }
     );
