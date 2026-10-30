@@ -36,17 +36,18 @@
         "poster": "/frames/scene-01-hero/poster-desktop.webp"
       },
       "mobile": {
-        "width": 640,
+        "version": 3,
+        "width": 854,
         "height": 480,
-        "aspect": "4:3",
-        "frameCount": 64,
-        "quality": 85,
-        "radialFeatherBaked": true,
-        "totalBytes": 1194524,
-        "totalMB": 1.14,
-        "avgFrameKB": 18.2,
-        "pathPattern": "/frames/scene-01-hero/mobile/frame_{0001..0064}.webp",
-        "poster": "/frames/scene-01-hero/poster-mobile.webp"
+        "aspect": "16:9",
+        "frameCount": 144,
+        "quality": 82,
+        "totalBytes": 2609684,
+        "totalMB": 2.49,
+        "avgFrameKB": 17.7,
+        "packBin": "/frames/scene-01-hero/mobile-pack-v3.bin",
+        "packJson": "/frames/scene-01-hero/mobile-pack-v3.json",
+        "poster": "/frames/scene-01-hero/poster-mobile-v3.webp"
       }
     },
     "scene-02-implant": {
@@ -83,17 +84,18 @@
         "poster": "/frames/scene-02-implant/poster-desktop.webp"
       },
       "mobile": {
-        "width": 640,
+        "version": 3,
+        "width": 854,
         "height": 480,
-        "aspect": "4:3",
-        "frameCount": 64,
-        "quality": 85,
-        "radialFeatherBaked": true,
-        "totalBytes": 602710,
-        "totalMB": 0.57,
-        "avgFrameKB": 9.2,
-        "pathPattern": "/frames/scene-02-implant/mobile/frame_{0001..0064}.webp",
-        "poster": "/frames/scene-02-implant/poster-mobile.webp"
+        "aspect": "16:9",
+        "frameCount": 144,
+        "quality": 82,
+        "totalBytes": 1300546,
+        "totalMB": 1.24,
+        "avgFrameKB": 8.8,
+        "packBin": "/frames/scene-02-implant/mobile-pack-v3.bin",
+        "packJson": "/frames/scene-02-implant/mobile-pack-v3.json",
+        "poster": "/frames/scene-02-implant/poster-mobile-v3.webp"
       }
     },
     "scene-03-scan-whitening": {
@@ -130,17 +132,18 @@
         "poster": "/frames/scene-03-scan-whitening/poster-desktop.webp"
       },
       "mobile": {
-        "width": 640,
+        "version": 3,
+        "width": 854,
         "height": 480,
-        "aspect": "4:3",
-        "frameCount": 64,
-        "quality": 85,
-        "radialFeatherBaked": true,
-        "totalBytes": 1043760,
-        "totalMB": 1.0,
-        "avgFrameKB": 15.9,
-        "pathPattern": "/frames/scene-03-scan-whitening/mobile/frame_{0001..0064}.webp",
-        "poster": "/frames/scene-03-scan-whitening/poster-mobile.webp"
+        "aspect": "16:9",
+        "frameCount": 144,
+        "quality": 82,
+        "totalBytes": 3133312,
+        "totalMB": 2.99,
+        "avgFrameKB": 21.2,
+        "packBin": "/frames/scene-03-scan-whitening/mobile-pack-v3.bin",
+        "packJson": "/frames/scene-03-scan-whitening/mobile-pack-v3.json",
+        "poster": "/frames/scene-03-scan-whitening/poster-mobile-v3.webp"
       }
     }
   }
