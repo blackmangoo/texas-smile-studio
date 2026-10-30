@@ -1,17 +1,11 @@
 "use client";
 
 import React, { useRef, useCallback } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
 import { SCROLL_SCENES } from "@/data/clinicData";
 import { ScrollSequenceStage } from "@/components/canvas/ScrollSequenceStage";
 import { smoothScrollTo } from "@/lib/scrollBus";
+import { useSceneScrollScrub } from "@/lib/useSceneScrollScrub";
 import { ArrowUpRightIcon } from "@/components/icons/DentalIcons";
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 const TRUST_METRICS = [
   {
@@ -67,7 +61,7 @@ export function HeroSceneSection() {
       applyActDom(idx);
       const stageNode = pinSectionRef.current?.querySelector<
         HTMLDivElement & {
-          __setSceneProgress?: (p: number, snap?: boolean) => void;
+          __setSceneProgress?: (p: number, syncInRaf?: boolean) => void;
         }
       >('[data-scene-stage="scene-01-hero"]');
       const p = idx === 0 ? 0.04 : idx === 1 ? 0.5 : 0.96;
@@ -76,91 +70,48 @@ export function HeroSceneSection() {
     [applyActDom]
   );
 
-  useGSAP(
-    () => {
-      const trackEl = trackRef.current;
-      const stageContainerEl = pinSectionRef.current;
-      if (!trackEl || !stageContainerEl) return;
-
-      const stageNode = stageContainerEl.querySelector<
-        HTMLDivElement & {
-          __setSceneProgress?: (p: number, snap?: boolean) => void;
-        }
-      >('[data-scene-stage="scene-01-hero"]');
-
-      const mm = gsap.matchMedia();
-
-      // Laptop / Desktop: Keep exact GSAP pin + Lenis 0.35s scrub that feels best on desktop
-      mm.add(
-        "(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
-        () => {
-          ScrollTrigger.create({
-            trigger: stageContainerEl,
-            start: "top top",
-            end: `+=${scene.scrollLengthVh}%`,
-            pin: true,
-            scrub: 0.35,
-            anticipatePin: 1,
-            onUpdate: (self) => {
-              stageNode?.__setSceneProgress?.(self.progress);
-            },
-          });
-        }
-      );
-
-      // Mobile / Touch: Native GPU compositor CSS `position: sticky` track (`pin: false`!)
-      // Zero JS position:fixed reparenting jitter on iPhone Safari & Android Chrome!
-      mm.add(
-        "(max-width: 1023px) and (prefers-reduced-motion: no-preference), (pointer: coarse) and (prefers-reduced-motion: no-preference)",
-        () => {
-          ScrollTrigger.create({
-            trigger: trackEl,
-            start: "top top",
-            end: "bottom bottom",
-            pin: false,
-            scrub: 0.2,
-            onUpdate: (self) => {
-              stageNode?.__setSceneProgress?.(self.progress);
-            },
-          });
-        }
-      );
-
-      return () => mm.revert();
-    },
-    { scope: trackRef }
-  );
+  useSceneScrollScrub({
+    sceneId: "scene-01-hero",
+    scrollLengthVh: scene.scrollLengthVh,
+    trackRef,
+    stageContainerRef: pinSectionRef,
+  });
 
   return (
     <section id="hero-stage" aria-label="Hero — Architectural Dental Care">
-      {/* Outer Track: Tall CSS sticky runway on Mobile/Touch (310svh), normal wrapper on Desktop (where GSAP pins) */}
+      {/* Synchronized sticky track on phone/tablet (340svh) & GSAP pin container on desktop */}
       <div
         ref={trackRef}
-        className="relative h-[310svh] lg:h-auto"
-        style={{ backgroundColor: scene.sectionBgHex }}
+        className="scene-sticky-track relative"
+        style={
+          {
+            backgroundColor: scene.sectionBgHex,
+            "--mobile-track-h": "340svh",
+          } as React.CSSProperties
+        }
       >
         <div
           ref={pinSectionRef}
           data-act="0"
-          className="sticky top-0 h-[100svh] lg:relative lg:min-h-screen w-full overflow-hidden flex flex-col justify-evenly lg:justify-between pt-20 pb-4 sm:pb-8 lg:pb-10"
+          className="scene-sticky-stage w-full overflow-hidden flex flex-col justify-evenly lg:justify-between pt-[74px] pb-4 sm:pb-6 lg:pt-[84px] lg:pb-8"
           style={{ backgroundColor: scene.sectionBgHex, color: "#FFFDFA" }}
         >
           {/* Top Editorial Row */}
-          <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12 pt-1 sm:pt-3 lg:pt-6 grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-4 lg:gap-6 items-start">
+          <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-10 xl:px-12 grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-4 lg:gap-6 items-start">
             <div className="relative z-10 lg:col-span-4 max-w-md">
               <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-[#C8A26B] mb-1 sm:mb-2">
                 {scene.eyebrow}
               </p>
-              <p className="hidden lg:block text-[17px] leading-relaxed text-[#EAF7FA]/95 font-normal">
+              <p className="hidden lg:block text-[15px] xl:text-[17px] leading-relaxed text-[#EAF7FA]/95 font-normal">
                 Discover tailored restorative artistry, 60-second optical
                 diagnostics, and an unhurried Dallas team dedicated to your
                 long-term comfort.
               </p>
-              <div className="mt-5 hidden lg:flex flex-wrap items-center gap-3">
+              <div className="mt-4 hidden lg:flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => smoothScrollTo("#services")}
-                  className="inline-flex h-11 sm:h-12 items-center gap-2.5 rounded-full bg-[#FFFDFA] px-5 sm:px-6 text-xs font-semibold uppercase tracking-[0.12em] text-[#13232C] shadow-lg hover:bg-[#C8A26B] transition-colors cursor-pointer"
+                  className="inline-flex h-11 items-center gap-2 rounded-full bg-[#FFFDFA] px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#13232C] shadow-lg hover:bg-[#C8A26B] transition-colors cursor-pointer whitespace-nowrap"
                 >
                   <span>Explore Our Services</span>
                   <ArrowUpRightIcon className="w-4 h-4" />
@@ -168,16 +119,16 @@ export function HeroSceneSection() {
                 <button
                   type="button"
                   onClick={() => smoothScrollTo("#booking")}
-                  className="inline-flex h-11 sm:h-12 items-center gap-2 rounded-full border border-white/40 bg-[#135865]/70 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#FFFDFA] hover:bg-white/15 transition-colors cursor-pointer"
+                  className="inline-flex h-11 items-center gap-2 rounded-full border border-white/40 bg-[#135865]/70 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#FFFDFA] hover:bg-white/15 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   <span>Book a Visit</span>
                 </button>
               </div>
             </div>
 
-            {/* Unified 16:9 Centered 3D Dental Arch Stage — Uncropped on Phone, Tablet, and Desktop */}
-            <div className="lg:col-span-4 w-full flex items-center justify-center lg:pointer-events-none lg:absolute lg:inset-0 lg:h-full">
-              <div className="relative w-full max-w-[560px] lg:max-w-[1160px] aspect-[16/9] max-h-[33svh] sm:max-h-[38svh] lg:max-h-none lg:aspect-auto lg:h-[78vh]">
+            {/* Unified 16:9 Centered 3D Dental Arch Stage */}
+            <div className="lg:col-span-4 w-full flex items-center justify-center lg:pointer-events-none lg:absolute lg:inset-0 lg:pt-[68px]">
+              <div className="relative w-full max-w-[560px] lg:max-w-[1120px] aspect-[16/9] max-h-[33svh] sm:max-h-[38svh] lg:max-h-[75vh]">
                 <ScrollSequenceStage
                   scene={scene}
                   eager={true}
@@ -188,35 +139,37 @@ export function HeroSceneSection() {
             </div>
 
             {/* Right Live Restorative Act Switcher Card */}
-            <div className="relative z-10 lg:col-span-4 lg:col-start-9 lg:justify-self-end w-full max-w-md lg:max-w-sm rounded-2xl border border-white/20 bg-[#0D3F49] p-3.5 sm:p-5">
+            <div className="relative z-10 lg:col-span-4 lg:col-start-9 lg:justify-self-end w-full max-w-md lg:max-w-sm rounded-2xl border border-white/20 bg-[#0D3F49]/95 p-3.5 sm:p-4 xl:p-5">
               {scene.acts.map((act, idx) => (
                 <div
                   key={act.id}
                   data-hero-act-panel={String(idx)}
                   className={idx === 0 ? "" : "hidden"}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1 sm:mb-2.5">
-                    <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C8A26B]">
+                  <div className="flex items-baseline justify-between gap-2 mb-1 sm:mb-2">
+                    <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.15em] text-[#C8A26B] whitespace-nowrap">
                       {act.badge}
                     </span>
-                    <span className="font-serif text-base sm:text-lg text-[#EAF7FA]">
-                      {act.metricValue}{" "}
-                      <span className="font-sans text-[11px] sm:text-xs text-[#9FB7BE]">
+                    <span className="shrink-0 text-right whitespace-nowrap">
+                      <span className="font-serif text-base sm:text-lg text-[#EAF7FA]">
+                        {act.metricValue}
+                      </span>{" "}
+                      <span className="font-sans text-[10px] sm:text-[11px] text-[#9FB7BE]">
                         {act.metricLabel}
                       </span>
                     </span>
                   </div>
-                  <h2 className="font-serif text-lg sm:text-xl font-normal text-[#FFFDFA]">
+                  <h2 className="font-serif text-lg xl:text-xl font-normal text-[#FFFDFA]">
                     {act.title}
                   </h2>
-                  <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#EAF7FA]/85 line-clamp-2 sm:line-clamp-none">
+                  <p className="mt-1 text-xs xl:text-sm leading-relaxed text-[#EAF7FA]/85 line-clamp-2 xl:line-clamp-none">
                     {act.subtitle}
                   </p>
                 </div>
               ))}
 
               <div
-                className="mt-3 sm:mt-4 flex items-center gap-1.5"
+                className="mt-3 flex items-center gap-1.5"
                 role="tablist"
                 aria-label="Hero 3D Sequence Chapters"
               >
@@ -241,7 +194,7 @@ export function HeroSceneSection() {
                   );
                 })}
               </div>
-              <div className="mt-2.5 sm:mt-3 h-1 w-full overflow-hidden rounded-full bg-white/15">
+              <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-white/15">
                 <div
                   ref={progressBarRef}
                   className="h-full w-full origin-left rounded-full bg-[#C8A26B] will-change-transform"
@@ -252,9 +205,9 @@ export function HeroSceneSection() {
           </div>
 
           {/* Bottom Editorial Row */}
-          <div className="relative z-10 mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12 mt-2 lg:mt-0 grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-5 items-end">
+          <div className="relative z-10 mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-10 xl:px-12 mt-2 lg:mt-0 grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-5 items-end">
             <div className="lg:col-span-8">
-              <h1 className="font-serif text-[26px] sm:text-5xl lg:text-[62px] font-normal uppercase leading-[1.04] tracking-[-0.02em] text-[#FFFDFA]">
+              <h1 className="font-serif text-[26px] sm:text-5xl lg:text-[48px] xl:text-[60px] font-normal uppercase leading-[1.03] tracking-[-0.02em] text-[#FFFDFA]">
                 Dental Care
                 <br />
                 Engineered For
@@ -281,12 +234,12 @@ export function HeroSceneSection() {
             </div>
 
             <div className="hidden sm:flex lg:col-span-4 lg:text-right flex-col lg:items-end justify-end">
-              <p className="max-w-xs text-sm sm:text-base leading-relaxed text-[#EAF7FA]/90">
+              <p className="max-w-xs text-sm xl:text-base leading-relaxed text-[#EAF7FA]/90">
                 From routine preventive checkups to 3D-guided implants, clear
                 aligners, and 0.3mm veneers — we craft healthy Dallas smiles
                 without the rush.
               </p>
-              <div className="mt-3 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[#C8A26B]">
+              <div className="mt-2.5 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[#C8A26B]">
                 <span>Scroll to articulate 3D arch</span>
                 <span aria-hidden="true">↓</span>
               </div>
@@ -297,7 +250,7 @@ export function HeroSceneSection() {
 
       {/* 4-Column Architectural Metrics Bar on Warm Ivory */}
       <div className="border-b border-[#E6E0D6] bg-[#FFFDFA] text-[#13232C]">
-        <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12 py-10 sm:py-12">
+        <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-10 xl:px-12 py-10 sm:py-12">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#E6E0D6]">
             {TRUST_METRICS.map((item, idx) => (
               <div

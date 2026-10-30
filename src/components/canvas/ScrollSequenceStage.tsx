@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import type { ScrollSceneConfig } from "@/data/clinicData";
+import { TOUCH_STICKY_MEDIA_QUERY } from "@/lib/useSceneScrollScrub";
 
 interface ScrollSequenceStageProps {
   scene: ScrollSceneConfig;
@@ -23,7 +24,15 @@ interface MobilePackIndex {
   frames: { o: number; l: number }[];
 }
 
-// Global scroll timestamp so offscreen decodes yield while user is actively scrolling
+interface StreamingMobilePack {
+  meta: MobilePackIndex;
+  bytes: Uint8Array;
+  receivedBytes: number;
+  complete: boolean;
+  listeners: Set<() => void>;
+}
+
+// Track active scroll timestamp so background non-playhead bitmap uploads yield during touch swipes
 let globalLastScrollTs = 0;
 if (typeof window !== "undefined") {
   const markScroll = () => {
@@ -31,6 +40,123 @@ if (typeof window !== "undefined") {
   };
   window.addEventListener("scroll", markScroll, { passive: true });
   window.addEventListener("touchmove", markScroll, { passive: true });
+}
+
+// Module-level streaming pack cache: unpacks frames incrementally as HTTP chunks arrive!
+const streamingPackCache = new Map<string, Promise<StreamingMobilePack | null>>();
+let packStreamChain: Promise<unknown> = Promise.resolve();
+
+function openStreamingMobilePack(
+  packJsonUrl: string,
+  packBinUrl: string,
+  urgent: boolean
+): Promise<StreamingMobilePack | null> {
+  const existing = streamingPackCache.get(packBinUrl);
+  if (existing) return existing;
+
+  const startStream = async (): Promise<StreamingMobilePack | null> => {
+    try {
+      const idxResp = await fetch(packJsonUrl, { cache: "force-cache" });
+      if (!idxResp.ok) return null;
+      const meta = (await idxResp.json()) as MobilePackIndex;
+
+      const binResp = await fetch(packBinUrl, { cache: "force-cache" });
+      if (!binResp.ok) return null;
+
+      const state: StreamingMobilePack = {
+        meta,
+        bytes: new Uint8Array(meta.totalBytes),
+        receivedBytes: 0,
+        complete: false,
+        listeners: new Set(),
+      };
+
+      const notify = () => {
+        for (const fn of state.listeners) fn();
+      };
+
+      if (binResp.body && typeof binResp.body.getReader === "function") {
+        const reader = binResp.body.getReader();
+        // Pump network chunks in background while returning `state` immediately so early frames decode at once!
+        void (async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              if (value && value.byteLength > 0) {
+                const end = Math.min(
+                  state.bytes.byteLength,
+                  state.receivedBytes + value.byteLength
+                );
+                const len = end - state.receivedBytes;
+                if (len > 0) {
+                  state.bytes.set(value.subarray(0, len), state.receivedBytes);
+                  state.receivedBytes = end;
+                  notify();
+                }
+              }
+            }
+            state.complete = true;
+            notify();
+          } catch {
+            streamingPackCache.delete(packBinUrl);
+          }
+        })();
+        return state;
+      }
+
+      // Fallback when ReadableStream is unavailable
+      const ab = await binResp.arrayBuffer();
+      const src = new Uint8Array(ab);
+      state.bytes.set(src.subarray(0, state.bytes.byteLength), 0);
+      state.receivedBytes = Math.min(src.byteLength, state.bytes.byteLength);
+      state.complete = true;
+      return state;
+    } catch {
+      streamingPackCache.delete(packBinUrl);
+      return null;
+    }
+  };
+
+  let handlePromise: Promise<StreamingMobilePack | null>;
+  if (urgent) {
+    handlePromise = startStream();
+    packStreamChain = packStreamChain.then(() =>
+      handlePromise.then(
+        (st) =>
+          st && !st.complete
+            ? new Promise<void>((resolve) => {
+                const check = () => {
+                  if (st.complete) {
+                    st.listeners.delete(check);
+                    resolve();
+                  }
+                };
+                st.listeners.add(check);
+              })
+            : undefined
+      )
+    );
+  } else {
+    handlePromise = packStreamChain.then(() => startStream());
+    packStreamChain = handlePromise.then(
+      (st) =>
+        st && !st.complete
+          ? new Promise<void>((resolve) => {
+              const check = () => {
+                if (st.complete) {
+                  st.listeners.delete(check);
+                  resolve();
+                }
+              };
+              st.listeners.add(check);
+            })
+          : undefined
+    );
+  }
+
+  streamingPackCache.set(packBinUrl, handlePromise);
+  return handlePromise;
 }
 
 function formatFrameUrl(dir: string, oneBasedIndex: number): string {
@@ -43,6 +169,29 @@ function getFrameDimensions(frame: DecodedFrame): { w: number; h: number } {
     return { w: frame.naturalWidth, h: frame.naturalHeight };
   }
   return { w: frame.width, h: frame.height };
+}
+
+function hexToRgbTuple(hex: string): [number, number, number] {
+  const clean = hex.replace("#", "").trim();
+  const num = parseInt(clean, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+function buildStaticVignetteCss(
+  sceneId: ScrollSceneConfig["id"],
+  sectionBgHex: string
+): string {
+  const [r, g, b] = hexToRgbTuple(sectionBgHex);
+  const innerStop =
+    sceneId === "scene-02-implant"
+      ? 55
+      : sceneId === "scene-03-scan-whitening"
+      ? 66
+      : 61;
+  const s1 = innerStop + 10;
+  const s2 = innerStop + 20;
+  const s3 = Math.min(93, innerStop + 29);
+  return `radial-gradient(50% 49.5% at 50% 50%, rgba(${r},${g},${b},0) ${innerStop}%, rgba(${r},${g},${b},0.18) ${s1}%, rgba(${r},${g},${b},0.56) ${s2}%, rgba(${r},${g},${b},0.88) ${s3}%, rgb(${r},${g},${b}) 97.5%)`;
 }
 
 export function ScrollSequenceStage({
@@ -69,8 +218,14 @@ export function ScrollSequenceStage({
   const totalFramesRef = useRef<number>(scene.desktop.frameCount);
   const posterHiddenRef = useRef<boolean>(false);
   const rafIdRef = useRef<number>(0);
+  const wakeDecoderRef = useRef<(() => void) | null>(null);
 
   const [reducedMotion, setReducedMotion] = useState<boolean>(false);
+
+  const vignetteOverlayCss = useMemo(
+    () => buildStaticVignetteCss(scene.id, scene.sectionBgHex),
+    [scene.id, scene.sectionBgHex]
+  );
 
   const findNearestLoadedIndex = useCallback((desiredIdx: number): number => {
     const mask = loadedMaskRef.current;
@@ -88,11 +243,6 @@ export function ScrollSequenceStage({
     return -1;
   }, []);
 
-  /**
-   * Aspect-safe, centered 5-argument hardware canvas draw (`ctx.drawImage(frame, dx, dy, dw, dh)`).
-   * Guarantees frames are ALWAYS 100% centered and fit inside `canvas.width x canvas.height` —
-   * never cropped or shifted regardless of source resolution.
-   */
   const flushDraw = useCallback(
     (forceRedraw = false) => {
       rafIdRef.current = 0;
@@ -126,7 +276,6 @@ export function ScrollSequenceStage({
       }
       if (!ctx) return;
 
-      // Exact 1:1 fast path when intrinsic size matches canvas size; centered contain fit otherwise
       if (fw === cw && fh === ch) {
         ctx.drawImage(frame, 0, 0, cw, ch);
       } else {
@@ -153,13 +302,13 @@ export function ScrollSequenceStage({
   );
 
   const scheduleDraw = useCallback(
-    (immediate = false) => {
-      if (immediate) {
+    (syncNow = false) => {
+      if (syncNow) {
         if (rafIdRef.current) {
           cancelAnimationFrame(rafIdRef.current);
           rafIdRef.current = 0;
         }
-        flushDraw(true);
+        flushDraw(false);
         return;
       }
       if (rafIdRef.current === 0) {
@@ -169,17 +318,15 @@ export function ScrollSequenceStage({
     [flushDraw]
   );
 
-  /**
-   * Imperative progress setter invoked by GSAP ScrollTrigger (`scrub: 0.22` mobile / `0.35` desktop).
-   */
   const setProgressImperative = useCallback(
-    (progress01: number, snapImmediate = false) => {
+    (progress01: number, syncInRaf = false) => {
       const p = Math.max(0, Math.min(1, progress01));
       const total = totalFramesRef.current;
       targetProgressRef.current = p;
       targetFrameRef.current = Math.min(total - 1, Math.round(p * (total - 1)));
 
-      scheduleDraw(snapImmediate);
+      wakeDecoderRef.current?.();
+      scheduleDraw(syncInRaf);
 
       const nextAct: 0 | 1 | 2 = p < 0.34 ? 0 : p < 0.68 ? 1 : 2;
       if (nextAct !== activeActRef.current) {
@@ -193,7 +340,7 @@ export function ScrollSequenceStage({
   useEffect(() => {
     const el = containerRef.current as
       | (HTMLDivElement & {
-          __setSceneProgress?: (p: number, snap?: boolean) => void;
+          __setSceneProgress?: (p: number, syncInRaf?: boolean) => void;
         })
       | null;
     if (el) {
@@ -217,13 +364,12 @@ export function ScrollSequenceStage({
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Frame streaming & active-scene memory lifecycle
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
 
-    const mobile = window.innerWidth < 768;
-    const tier = mobile ? scene.mobile : scene.desktop;
+    const useMobilePack = window.matchMedia(TOUCH_STICKY_MEDIA_QUERY).matches;
+    const tier = useMobilePack ? scene.mobile : scene.desktop;
     const total = tier.frameCount;
     totalFramesRef.current = total;
 
@@ -275,6 +421,11 @@ export function ScrollSequenceStage({
         inFlightMaskRef.current[idx0] = 0;
         return;
       }
+      if (loadedMaskRef.current[idx0] === 1) {
+        if ("close" in decoded) decoded.close();
+        inFlightMaskRef.current[idx0] = 0;
+        return;
+      }
       framesRef.current[idx0] = decoded;
       loadedMaskRef.current[idx0] = 1;
       inFlightMaskRef.current[idx0] = 0;
@@ -283,169 +434,249 @@ export function ScrollSequenceStage({
       const curDrawn = drawnFrameRef.current;
       if (
         curDrawn < 0 ||
-        Math.abs(idx0 - curTarget) <= Math.abs(curDrawn - curTarget)
+        Math.abs(idx0 - curTarget) < Math.abs(curDrawn - curTarget)
       ) {
         scheduleDraw(curDrawn < 0);
       }
     };
 
-    if (mobile) {
-      // MOBILE V3 16:9 (854x480 x 144 frames) PACK ENGINE WITH ACTIVE-SCENE VRAM WINDOW
-      let packMeta: MobilePackIndex | null = null;
-      let packBuffer: ArrayBuffer | null = null;
+    if (useMobilePack) {
+      // STREAMING MOBILE V3 PACK ENGINE + ADAPTIVE SCROLL-AWARE DECODE BUDGET
+      let packState: StreamingMobilePack | null = null;
       let isNearViewport = eager;
-      let decodeLoopRunning = false;
+      let activeWorkers = 0;
+      let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
-      const strideSet = new Set<number>();
-      for (let i = 0; i < total; i += 6) strideSet.add(i);
-      strideSet.add(total - 1);
+      const permanentStrideSet = new Set<number>();
+      for (let i = 0; i < total; i += 4) permanentStrideSet.add(i);
+      permanentStrideSet.add(total - 1);
 
-      const evictNonStrideFrames = () => {
+      const isFrameReceived = (
+        st: StreamingMobilePack,
+        fIdx: number
+      ): boolean => {
+        if (fIdx < 0 || fIdx >= st.meta.frames.length) return false;
+        const entry = st.meta.frames[fIdx];
+        return entry.o + entry.l <= st.receivedBytes;
+      };
+
+      const evictDistantFineFrames = () => {
+        if (isNearViewport) return;
         for (let i = 0; i < total; i++) {
-          if (!strideSet.has(i) && loadedMaskRef.current[i] === 1) {
+          if (!permanentStrideSet.has(i) && loadedMaskRef.current[i] === 1) {
             const f = framesRef.current[i];
             if (f && "close" in f) f.close();
             framesRef.current[i] = null;
             loadedMaskRef.current[i] = 0;
           }
         }
-        if (drawnFrameRef.current >= 0 && !strideSet.has(drawnFrameRef.current)) {
+        if (
+          drawnFrameRef.current >= 0 &&
+          !permanentStrideSet.has(drawnFrameRef.current)
+        ) {
           drawnFrameRef.current = -1;
           scheduleDraw(true);
         }
       };
 
-      const pumpDecodeLoop = async () => {
-        if (decodeLoopRunning || cancelled || !packMeta || !packBuffer) return;
-        decodeLoopRunning = true;
+      /**
+       * Picks next available received frame:
+       *  - `playheadOnly = true` (during active touch scroll): ONLY decodes if an immediate
+       *    `[target - 1 .. target + 3]` playhead frame is missing, keeping scroll at 60 FPS!
+       *  - `playheadOnly = false` (idle >= 75ms): decodes all 144 frames coarse-to-fine.
+       */
+      const pickNextFrame = (
+        st: StreamingMobilePack,
+        playheadOnly: boolean
+      ): number => {
+        const count = Math.min(total, st.meta.frames.length);
+        const target = targetFrameRef.current;
 
-        try {
-          const count = Math.min(total, packMeta.frames.length);
-          while (!cancelled) {
-            if (performance.now() - globalLastScrollTs < 90) {
-              await new Promise((r) => setTimeout(r, 45));
-              continue;
-            }
-
-            const target = targetFrameRef.current;
-            let bestIdx = -1;
-            let bestDist = Infinity;
-
-            // 1. Always decode all 24 stride keyframes first
-            for (const sIdx of strideSet) {
-              if (sIdx < count && loadedMaskRef.current[sIdx] === 0) {
-                const d = Math.abs(sIdx - target);
-                if (d < bestDist) {
-                  bestDist = d;
-                  bestIdx = sIdx;
-                }
+        if (isNearViewport) {
+          const lo = Math.max(0, target - 1);
+          const hi = Math.min(count - 1, target + 3);
+          let bestImmediate = -1;
+          let bestImmediateDist = Infinity;
+          for (let i = lo; i <= hi; i++) {
+            if (
+              loadedMaskRef.current[i] === 0 &&
+              inFlightMaskRef.current[i] === 0 &&
+              isFrameReceived(st, i)
+            ) {
+              const d = Math.abs(i - target);
+              if (d < bestImmediateDist) {
+                bestImmediateDist = d;
+                bestImmediate = i;
               }
             }
-
-            // 2. When near viewport, decode all 144 frames for full laptop-grade smoothness
-            if (bestIdx < 0 && isNearViewport) {
-              for (let i = 0; i < count; i++) {
-                if (loadedMaskRef.current[i] === 0) {
-                  const d = Math.abs(i - target);
-                  if (d < bestDist) {
-                    bestDist = d;
-                    bestIdx = i;
-                  }
-                }
-              }
-            }
-
-            if (bestIdx < 0) break;
-
-            const batch: number[] = [bestIdx];
-            if (isNearViewport) {
-              for (let i = 0; i < count && batch.length < 3; i++) {
-                if (loadedMaskRef.current[i] === 0 && i !== bestIdx) {
-                  batch.push(i);
-                }
-              }
-            }
-
-            const metaRef = packMeta;
-            const bufRef = packBuffer;
-            await Promise.all(
-              batch.map(async (fIdx) => {
-                const entry = metaRef.frames[fIdx];
-                const slice = new Blob([bufRef.slice(entry.o, entry.o + entry.l)], {
-                  type: "image/webp",
-                });
-                const bmp = await decodeBlob(slice);
-                storeDecodedFrame(fIdx, bmp);
-              })
-            );
-
-            await new Promise((r) => setTimeout(r, 4));
           }
-        } finally {
-          decodeLoopRunning = false;
+          if (bestImmediate >= 0) return bestImmediate;
+        }
+
+        if (playheadOnly) return -1;
+
+        const passes = isNearViewport ? [16, 8, 4, 2, 1] : [16, 8, 4];
+        for (const step of passes) {
+          let bestIdx = -1;
+          let bestDist = Infinity;
+          for (let i = 0; i < count; i += step) {
+            if (
+              loadedMaskRef.current[i] === 0 &&
+              inFlightMaskRef.current[i] === 0 &&
+              isFrameReceived(st, i)
+            ) {
+              const d = Math.abs(i - target);
+              if (d < bestDist) {
+                bestDist = d;
+                bestIdx = i;
+              }
+            }
+          }
+          if (
+            step === 4 &&
+            bestIdx < 0 &&
+            loadedMaskRef.current[count - 1] === 0 &&
+            inFlightMaskRef.current[count - 1] === 0 &&
+            isFrameReceived(st, count - 1)
+          ) {
+            return count - 1;
+          }
+          if (bestIdx >= 0) return bestIdx;
+        }
+        return -1;
+      };
+
+      const spawnDecodeWorkers = () => {
+        if (cancelled || !packState) return;
+        const st = packState;
+        const activelyScrolling =
+          performance.now() - globalLastScrollTs < 75;
+        const maxWorkers = activelyScrolling ? 1 : 4;
+
+        if (activelyScrolling && resumeTimer === null) {
+          resumeTimer = setTimeout(() => {
+            resumeTimer = null;
+            spawnDecodeWorkers();
+          }, 85);
+        }
+
+        const runWorker = async () => {
+          activeWorkers++;
+          try {
+            while (!cancelled) {
+              const scrollingNow =
+                performance.now() - globalLastScrollTs < 75;
+              if (scrollingNow && activeWorkers > 1) {
+                break;
+              }
+              const nextIdx = pickNextFrame(st, scrollingNow);
+              if (nextIdx < 0) {
+                if (scrollingNow && resumeTimer === null) {
+                  resumeTimer = setTimeout(() => {
+                    resumeTimer = null;
+                    spawnDecodeWorkers();
+                  }, 85);
+                }
+                break;
+              }
+              inFlightMaskRef.current[nextIdx] = 1;
+              const entry = st.meta.frames[nextIdx];
+              const view = st.bytes.subarray(entry.o, entry.o + entry.l);
+              const sliceBlob = new Blob([view], { type: "image/webp" });
+              const bmp = await decodeBlob(sliceBlob);
+              storeDecodedFrame(nextIdx, bmp);
+
+              if (scrollingNow) {
+                // Yield one paint frame so touch scroll stays 60/120 FPS
+                await new Promise((r) => requestAnimationFrame(() => r(null)));
+              }
+            }
+          } finally {
+            activeWorkers--;
+          }
+        };
+
+        while (activeWorkers < maxWorkers) {
+          const probe = pickNextFrame(st, activelyScrolling);
+          if (probe < 0) break;
+          void runWorker();
         }
       };
 
-      const initMobilePack = async () => {
-        try {
-          // Paint Frame 0 immediately from v3 poster
-          const pResp = await fetch(scene.mobile.poster, { cache: "force-cache" });
-          if (pResp.ok && !cancelled && loadedMaskRef.current[0] === 0) {
-            const pBmp = await decodeBlob(await pResp.blob());
-            if (pBmp && loadedMaskRef.current[0] === 0) {
-              storeDecodedFrame(0, pBmp);
+      wakeDecoderRef.current = spawnDecodeWorkers;
+
+      let onChunkListener: (() => void) | null = null;
+      const startMobilePack = async (urgent: boolean) => {
+        fetch(scene.mobile.poster, { cache: "force-cache" })
+          .then(async (pResp) => {
+            if (pResp.ok && !cancelled && loadedMaskRef.current[0] === 0) {
+              const pBmp = await decodeBlob(await pResp.blob());
+              if (pBmp) storeDecodedFrame(0, pBmp);
             }
-          }
+          })
+          .catch(() => {});
 
-          const [idxResp, binResp] = await Promise.all([
-            fetch(scene.mobile.packJson, { cache: "force-cache" }),
-            fetch(scene.mobile.packBin, { cache: "force-cache" }),
-          ]);
-          if (!idxResp.ok || !binResp.ok || cancelled) return;
-
-          packMeta = (await idxResp.json()) as MobilePackIndex;
-          packBuffer = await binResp.arrayBuffer();
-          if (cancelled) return;
-
-          pumpDecodeLoop();
-        } catch {
-          // Ignore network abort on unmount
-        }
+        const st = await openStreamingMobilePack(
+          scene.mobile.packJson,
+          scene.mobile.packBin,
+          urgent
+        );
+        if (!st || cancelled) return;
+        packState = st;
+        onChunkListener = () => {
+          if (!cancelled) spawnDecodeWorkers();
+        };
+        st.listeners.add(onChunkListener);
+        spawnDecodeWorkers();
       };
 
-      const staggerMs = eager
-        ? 0
-        : scene.id === "scene-02-implant"
-        ? 450
-        : 1050;
-      const startTimer = setTimeout(() => {
-        if (!cancelled) initMobilePack();
-      }, staggerMs);
+      void startMobilePack(eager);
 
       const el = containerRef.current;
-      let io: IntersectionObserver | null = null;
+      let preloadIo: IntersectionObserver | null = null;
+      let evictIo: IntersectionObserver | null = null;
+
       if (el && typeof IntersectionObserver !== "undefined") {
-        io = new IntersectionObserver(
+        preloadIo = new IntersectionObserver(
           (entries) => {
             for (const entry of entries) {
               if (entry.isIntersecting) {
                 isNearViewport = true;
-                pumpDecodeLoop();
-              } else {
-                isNearViewport = false;
-                evictNonStrideFrames();
+                if (!packState) {
+                  void startMobilePack(true);
+                } else {
+                  spawnDecodeWorkers();
+                }
               }
             }
           },
-          { rootMargin: "130% 0px 130% 0px" }
+          { rootMargin: "260% 0px 260% 0px" }
         );
-        io.observe(el);
+        preloadIo.observe(el);
+
+        evictIo = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) {
+                isNearViewport = false;
+                evictDistantFineFrames();
+              }
+            }
+          },
+          { rootMargin: "400% 0px 400% 0px" }
+        );
+        evictIo.observe(el);
       }
 
       return () => {
         cancelled = true;
-        clearTimeout(startTimer);
-        io?.disconnect();
+        wakeDecoderRef.current = null;
+        if (resumeTimer) clearTimeout(resumeTimer);
+        if (packState && onChunkListener) {
+          packState.listeners.delete(onChunkListener);
+        }
+        preloadIo?.disconnect();
+        evictIo?.disconnect();
         if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = 0;
         for (const f of framesRef.current) {
@@ -454,7 +685,8 @@ export function ScrollSequenceStage({
       };
     }
 
-    // DESKTOP 1920x1080 PROGRESSIVE STREAMER (Unchanged laptop excellence)
+    // DESKTOP 1920x1080 PROGRESSIVE HTTP/2 STREAMER
+    wakeDecoderRef.current = null;
     let desktopStarted = false;
     const startDesktop = async () => {
       if (desktopStarted || cancelled) return;
@@ -470,9 +702,12 @@ export function ScrollSequenceStage({
         }
         inFlightMaskRef.current[idx0] = 1;
         try {
-          const resp = await fetch(formatFrameUrl(scene.desktop.dir, idx0 + 1), {
-            cache: "force-cache",
-          });
+          const resp = await fetch(
+            formatFrameUrl(scene.desktop.dir, idx0 + 1),
+            {
+              cache: "force-cache",
+            }
+          );
           if (!resp.ok) {
             inFlightMaskRef.current[idx0] = 0;
             return;
@@ -487,94 +722,83 @@ export function ScrollSequenceStage({
       await loadOne(0);
       if (cancelled) return;
 
-      const strideIndices: number[] = [];
-      const step = Math.max(1, Math.floor(total / 18));
-      for (let i = 0; i < total; i += step) {
-        if (loadedMaskRef.current[i] === 0) strideIndices.push(i);
-      }
-      if (loadedMaskRef.current[total - 1] === 0) {
-        strideIndices.push(total - 1);
-      }
-
-      const pickNext = (strideOnly: boolean): number => {
+      const pickNext = (): number => {
         const target = targetFrameRef.current;
-        let bestIdx = -1;
-        let bestDist = Infinity;
-        if (strideOnly) {
-          for (const idx of strideIndices) {
+        for (const step of [18, 6, 2, 1]) {
+          let bestIdx = -1;
+          let bestDist = Infinity;
+          for (let i = 0; i < total; i += step) {
             if (
-              loadedMaskRef.current[idx] === 0 &&
-              inFlightMaskRef.current[idx] === 0
+              loadedMaskRef.current[i] === 0 &&
+              inFlightMaskRef.current[i] === 0
             ) {
-              const d = Math.abs(idx - target);
+              const d = Math.abs(i - target);
               if (d < bestDist) {
                 bestDist = d;
-                bestIdx = idx;
+                bestIdx = i;
               }
             }
           }
-          return bestIdx;
+          if (bestIdx >= 0) return bestIdx;
         }
-        for (let i = 0; i < total; i++) {
-          if (
-            loadedMaskRef.current[i] === 0 &&
-            inFlightMaskRef.current[i] === 0
-          ) {
-            const d = Math.abs(i - target);
-            if (d < bestDist) {
-              bestDist = d;
-              bestIdx = i;
-            }
-          }
+        if (
+          loadedMaskRef.current[total - 1] === 0 &&
+          inFlightMaskRef.current[total - 1] === 0
+        ) {
+          return total - 1;
         }
-        return bestIdx;
+        return -1;
       };
 
       const worker = async () => {
         while (!cancelled) {
-          let next = pickNext(true);
-          if (next < 0) next = pickNext(false);
+          const next = pickNext();
           if (next < 0) break;
           await loadOne(next);
         }
       };
-      await Promise.all(Array.from({ length: 6 }, () => worker()));
+      await Promise.all(Array.from({ length: 8 }, () => worker()));
     };
 
     if (eager) {
-      startDesktop();
-    } else {
-      const el = containerRef.current;
-      if (!el || typeof IntersectionObserver === "undefined") {
-        startDesktop();
-      } else {
-        const io = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                startDesktop();
-                io.disconnect();
-                break;
-              }
+      void startDesktop();
+      return () => {
+        cancelled = true;
+        if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = 0;
+        for (const f of framesRef.current) {
+          if (f && "close" in f) f.close();
+        }
+      };
+    }
+
+    const warmDelayMs = scene.id === "scene-02-implant" ? 550 : 1250;
+    const warmTimer = setTimeout(() => {
+      void startDesktop();
+    }, warmDelayMs);
+
+    const el = containerRef.current;
+    let io: IntersectionObserver | null = null;
+    if (el && typeof IntersectionObserver !== "undefined") {
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              void startDesktop();
+              io?.disconnect();
+              break;
             }
-          },
-          { rootMargin: "150% 0px 150% 0px" }
-        );
-        io.observe(el);
-        return () => {
-          cancelled = true;
-          io.disconnect();
-          if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-          rafIdRef.current = 0;
-          for (const f of framesRef.current) {
-            if (f && "close" in f) f.close();
           }
-        };
-      }
+        },
+        { rootMargin: "250% 0px 250% 0px" }
+      );
+      io.observe(el);
     }
 
     return () => {
       cancelled = true;
+      clearTimeout(warmTimer);
+      io?.disconnect();
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = 0;
       for (const f of framesRef.current) {
@@ -582,11 +806,6 @@ export function ScrollSequenceStage({
       }
     };
   }, [eager, scene, scheduleDraw]);
-
-  const maskStyle = {
-    WebkitMaskImage: scene.canvasMaskCss,
-    maskImage: scene.canvasMaskCss,
-  };
 
   return (
     <div
@@ -600,9 +819,8 @@ export function ScrollSequenceStage({
       <picture
         ref={posterElRef}
         className="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200 opacity-100"
-        style={maskStyle}
       >
-        <source media="(max-width: 767px)" srcSet={scene.mobile.poster} />
+        <source media={TOUCH_STICKY_MEDIA_QUERY} srcSet={scene.mobile.poster} />
         <img
           src={scene.desktop.poster}
           alt={scene.title}
@@ -615,7 +833,13 @@ export function ScrollSequenceStage({
       <canvas
         ref={canvasRef}
         className="pointer-events-none block w-full h-full object-contain"
-        style={maskStyle}
+      />
+
+      {/* Static GPU-cached radial feather vignette — zero per-frame canvas mask recomposition */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{ background: vignetteOverlayCss }}
       />
 
       {reducedMotion && (

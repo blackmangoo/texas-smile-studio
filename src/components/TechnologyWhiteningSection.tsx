@@ -1,22 +1,21 @@
 "use client";
 
 import React, { useRef, useCallback } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
 import { SCROLL_SCENES } from "@/data/clinicData";
 import { ScrollSequenceStage } from "@/components/canvas/ScrollSequenceStage";
 import { smoothScrollTo } from "@/lib/scrollBus";
+import { useSceneScrollScrub } from "@/lib/useSceneScrollScrub";
 import { ArrowUpRightIcon } from "@/components/icons/DentalIcons";
 import type { ServiceId } from "@/lib/bookingSchema";
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 interface TechnologyWhiteningSectionProps {
   onSelectServiceForBooking: (serviceId: ServiceId) => void;
 }
+
+const ACTIVE_S3_CARD_CLS =
+  "block w-full text-left rounded-2xl px-4 py-3 xl:px-4.5 xl:py-3.5 transition-colors cursor-pointer border bg-[#0A1C24] border-[#63E6D9]/55";
+const INACTIVE_S3_CARD_CLS =
+  "hidden lg:block w-full text-left rounded-2xl px-4 py-2.5 xl:px-4.5 xl:py-3 transition-colors cursor-pointer border bg-white/[0.03] border-white/10 hover:bg-white/[0.06]";
 
 export function TechnologyWhiteningSection({
   onSelectServiceForBooking,
@@ -48,9 +47,7 @@ export function TechnologyWhiteningSection({
       .forEach((card) => {
         const active = card.dataset.s3Card === String(actIdx);
         card.setAttribute("aria-selected", active ? "true" : "false");
-        card.className = active
-          ? "block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#0A1C24] border-[#63E6D9]/55"
-          : "hidden lg:block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-white/[0.03] border-white/10 hover:bg-white/[0.06]";
+        card.className = active ? ACTIVE_S3_CARD_CLS : INACTIVE_S3_CARD_CLS;
         const desc = card.querySelector<HTMLElement>("[data-s3-desc]");
         if (desc) desc.classList.toggle("hidden", !active);
       });
@@ -66,7 +63,7 @@ export function TechnologyWhiteningSection({
       applyActDom(idx);
       const stageNode = pinRef.current?.querySelector<
         HTMLDivElement & {
-          __setSceneProgress?: (p: number, snap?: boolean) => void;
+          __setSceneProgress?: (p: number, syncInRaf?: boolean) => void;
         }
       >('[data-scene-stage="scene-03-scan-whitening"]');
       const p = idx === 0 ? 0.04 : idx === 1 ? 0.5 : 0.96;
@@ -75,59 +72,12 @@ export function TechnologyWhiteningSection({
     [applyActDom]
   );
 
-  useGSAP(
-    () => {
-      const trackEl = trackRef.current;
-      const stageContainerEl = pinRef.current;
-      if (!trackEl || !stageContainerEl) return;
-
-      const stageNode = stageContainerEl.querySelector<
-        HTMLDivElement & {
-          __setSceneProgress?: (p: number, snap?: boolean) => void;
-        }
-      >('[data-scene-stage="scene-03-scan-whitening"]');
-
-      const mm = gsap.matchMedia();
-
-      // Laptop / Desktop: Keep exact GSAP pin + Lenis 0.35s scrub
-      mm.add(
-        "(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
-        () => {
-          ScrollTrigger.create({
-            trigger: stageContainerEl,
-            start: "top top",
-            end: `+=${scene.scrollLengthVh}%`,
-            pin: true,
-            scrub: 0.35,
-            anticipatePin: 1,
-            onUpdate: (self) => {
-              stageNode?.__setSceneProgress?.(self.progress);
-            },
-          });
-        }
-      );
-
-      // Mobile / Touch: Native GPU compositor CSS `position: sticky` track (`pin: false`!)
-      mm.add(
-        "(max-width: 1023px) and (prefers-reduced-motion: no-preference), (pointer: coarse) and (prefers-reduced-motion: no-preference)",
-        () => {
-          ScrollTrigger.create({
-            trigger: trackEl,
-            start: "top top",
-            end: "bottom bottom",
-            pin: false,
-            scrub: 0.2,
-            onUpdate: (self) => {
-              stageNode?.__setSceneProgress?.(self.progress);
-            },
-          });
-        }
-      );
-
-      return () => mm.revert();
-    },
-    { scope: trackRef }
-  );
+  useSceneScrollScrub({
+    sceneId: "scene-03-scan-whitening",
+    scrollLengthVh: scene.scrollLengthVh,
+    trackRef,
+    stageContainerRef: pinRef,
+  });
 
   return (
     <section
@@ -146,19 +96,25 @@ export function TechnologyWhiteningSection({
 
       <div
         ref={trackRef}
-        className="relative h-[280svh] lg:h-auto"
-        style={{ backgroundColor: scene.sectionBgHex }}
+        className="scene-sticky-track relative"
+        style={
+          {
+            backgroundColor: scene.sectionBgHex,
+            "--mobile-track-h": "310svh",
+          } as React.CSSProperties
+        }
       >
+        {/* Guaranteed top clearance below the 68px fixed navbar at all laptop & phone heights */}
         <div
           ref={pinRef}
           data-act="0"
-          className="sticky top-0 h-[100svh] lg:relative lg:min-h-screen w-full overflow-hidden flex items-center pt-22 pb-6 lg:py-0"
+          className="scene-sticky-stage w-full overflow-hidden flex items-center pt-[74px] pb-5 lg:pt-[84px] lg:pb-6"
           style={{ backgroundColor: scene.sectionBgHex }}
         >
-          <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-10 items-center">
-            {/* Left Column (58% — True 16:9 Centered Stage on Both Phone and Laptop!) */}
+          <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-10 xl:px-12 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 lg:gap-8 xl:gap-10 items-center">
+            {/* Left Column (58% — True 16:9 Centered Stage Fitted to Available Viewport Height) */}
             <div className="lg:col-span-7 flex items-center justify-center">
-              <div className="w-full max-w-[540px] lg:max-w-[880px] aspect-[16/9] max-h-[29svh] sm:max-h-[37svh] lg:max-h-none">
+              <div className="w-full max-w-[540px] lg:max-w-[860px] aspect-[16/9] max-h-[29svh] sm:max-h-[37svh] lg:max-h-[calc(100vh-116px)]">
                 <ScrollSequenceStage
                   scene={scene}
                   eager={false}
@@ -170,17 +126,17 @@ export function TechnologyWhiteningSection({
 
             {/* Right Column (42%) */}
             <div className="lg:col-span-5">
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#63E6D9]/35 bg-[#63E6D9]/10 px-3 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-[#63E6D9] mb-2 sm:mb-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#63E6D9]/35 bg-[#63E6D9]/10 px-3 py-1 text-[10px] xl:text-[11px] font-semibold uppercase tracking-[0.15em] text-[#63E6D9] mb-2">
                 {scene.eyebrow}
               </span>
               <h2
                 id="technology-heading"
-                className="font-serif text-2xl sm:text-4xl lg:text-[42px] font-normal tracking-tight text-[#EAF7FA] leading-[1.08]"
+                className="font-serif text-2xl sm:text-3xl lg:text-[34px] xl:text-[40px] font-normal tracking-tight text-[#EAF7FA] leading-[1.08]"
               >
                 A 3D scan in under a minute.{" "}
                 <span className="text-[#63E6D9]">No goop, no guesswork.</span>
               </h2>
-              <p className="hidden sm:block mt-2.5 lg:mt-3 text-sm sm:text-base leading-relaxed text-[#9FB7BE]">
+              <p className="scene-compact-hide hidden sm:block mt-2 text-xs sm:text-sm xl:text-[15px] leading-relaxed text-[#9FB7BE]">
                 Watch our structured-light optical scanner map every cusp in
                 real time, seat a custom-trimmed clear aligner, and finish with
                 a cold-spectrum B1 pearl whitening sweep.
@@ -213,7 +169,7 @@ export function TechnologyWhiteningSection({
 
               {/* 3 Pre-Mounted Midnight Chapter Steps */}
               <div
-                className="mt-3 lg:mt-6 space-y-2.5 lg:space-y-3"
+                className="mt-3 lg:mt-4 space-y-2"
                 role="tablist"
                 aria-label="Optical Scan and Whitening Chapters"
               >
@@ -228,30 +184,30 @@ export function TechnologyWhiteningSection({
                       aria-selected={isActive}
                       onClick={() => handleManualActClick(idx as 0 | 1 | 2)}
                       className={
-                        isActive
-                          ? "block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-[#0A1C24] border-[#63E6D9]/55"
-                          : "hidden lg:block w-full text-left rounded-2xl p-4 sm:p-5 transition-colors cursor-pointer border bg-white/[0.03] border-white/10 hover:bg-white/[0.06]"
+                        isActive ? ACTIVE_S3_CARD_CLS : INACTIVE_S3_CARD_CLS
                       }
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#63E6D9]">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[10px] xl:text-[11px] font-semibold uppercase tracking-[0.13em] text-[#63E6D9] whitespace-nowrap">
                           {act.badge}
                         </span>
-                        <span className="font-serif text-base sm:text-lg text-[#C8A26B]">
-                          {act.metricValue}{" "}
-                          <span className="font-sans text-[11px] text-[#9FB7BE]">
+                        <span className="shrink-0 text-right whitespace-nowrap">
+                          <span className="font-serif text-sm xl:text-base text-[#C8A26B]">
+                            {act.metricValue}
+                          </span>{" "}
+                          <span className="hidden sm:inline font-sans text-[10px] xl:text-[11px] text-[#9FB7BE]">
                             {act.metricLabel}
                           </span>
                         </span>
                       </div>
-                      <div className="mt-1 font-serif text-lg sm:text-xl text-[#EAF7FA]">
+                      <div className="mt-0.5 font-serif text-base xl:text-lg text-[#EAF7FA] leading-snug">
                         {act.title}
                       </div>
                       <p
                         data-s3-desc
                         className={`${
                           isActive ? "" : "hidden"
-                        } mt-1.5 text-xs sm:text-sm leading-relaxed text-[#9FB7BE]`}
+                        } mt-1 text-xs xl:text-[13px] leading-relaxed text-[#9FB7BE]`}
                       >
                         {act.subtitle}
                       </p>
@@ -261,7 +217,7 @@ export function TechnologyWhiteningSection({
               </div>
 
               {/* Progress Bar + Action Buttons */}
-              <div className="mt-4 lg:mt-5 flex flex-wrap items-center gap-3">
+              <div className="mt-3.5 lg:mt-4 flex flex-wrap items-center gap-3.5">
                 <div className="h-1.5 flex-1 min-w-[120px] overflow-hidden rounded-full bg-white/15">
                   <div
                     ref={progressBarRef}
@@ -279,7 +235,7 @@ export function TechnologyWhiteningSection({
                     );
                     smoothScrollTo("#booking");
                   }}
-                  className="inline-flex h-11 items-center gap-2 rounded-full bg-[#63E6D9] px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#0A1C24] hover:bg-[#EAF7FA] transition-colors cursor-pointer whitespace-nowrap"
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-[#63E6D9] px-4.5 text-[11px] xl:text-xs font-semibold uppercase tracking-[0.12em] text-[#0A1C24] hover:bg-[#EAF7FA] transition-colors cursor-pointer whitespace-nowrap"
                 >
                   <span data-s3-cta-label>Book 3D Scan</span>
                   <ArrowUpRightIcon className="w-3.5 h-3.5" />

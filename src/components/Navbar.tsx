@@ -22,7 +22,7 @@ export function Navbar() {
   useEffect(() => {
     let lastState = false;
     const onScroll = () => {
-      const isPast = window.scrollY > 48;
+      const isPast = window.scrollY > 36;
       if (isPast !== lastState && headerRef.current) {
         lastState = isPast;
         headerRef.current.dataset.scrolled = isPast ? "true" : "false";
@@ -51,44 +51,44 @@ export function Navbar() {
     <header
       ref={headerRef}
       data-scrolled="false"
-      className="fixed top-0 left-0 right-0 z-50 bg-transparent text-[#FFFDFA] transition-colors duration-300 data-[scrolled=true]:bg-[#13232C]/95 data-[scrolled=true]:border-b data-[scrolled=true]:border-white/10 data-[scrolled=true]:shadow-lg"
+      className="fixed top-0 left-0 right-0 z-50 bg-transparent text-[#FFFDFA] transition-colors duration-300 data-[scrolled=true]:bg-[#13232C]/95 data-[scrolled=true]:backdrop-blur-md data-[scrolled=true]:border-b data-[scrolled=true]:border-white/10 data-[scrolled=true]:shadow-lg"
     >
-      <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
+      <div className="mx-auto flex h-16 lg:h-[68px] max-w-[1440px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-10 xl:px-12">
         {/* Brand Wordmark with Custom Sculpted Medallion Emblem */}
         <button
           type="button"
           onClick={() => handleNavClick("#hero-stage")}
-          className="group flex items-center gap-2.5 sm:gap-3.5 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#63E6D9] cursor-pointer"
+          className="group flex shrink-0 items-center gap-2.5 sm:gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#63E6D9] cursor-pointer"
           aria-label="Texas Smile Studio — Return to top"
         >
           <img
             src="/brand/logo-emblem.webp"
             alt="Texas Smile Studio Emblem"
-            width={44}
-            height={44}
-            className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-full object-cover shadow-md transition-transform duration-300 group-hover:scale-105"
+            width={40}
+            height={40}
+            className="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-full object-cover shadow-md transition-transform duration-300 group-hover:scale-105"
           />
           <span className="flex flex-col">
-            <span className="font-serif text-base sm:text-xl font-normal tracking-tight text-[#FFFDFA] leading-none whitespace-nowrap">
+            <span className="font-serif text-base sm:text-lg xl:text-xl font-normal tracking-tight text-[#FFFDFA] leading-none whitespace-nowrap">
               Texas Smile Studio
             </span>
-            <span className="hidden sm:block mt-1 text-[11px] font-medium uppercase tracking-[0.18em] text-[#C8A26B]">
+            <span className="hidden xl:block mt-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[#C8A26B] whitespace-nowrap">
               Dallas · Architectural Dentistry
             </span>
           </span>
         </button>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop Navigation Links — Strictly single-line (`whitespace-nowrap`) across all laptop widths */}
         <nav
           aria-label="Primary Navigation"
-          className="hidden lg:flex items-center gap-7"
+          className="hidden lg:flex items-center lg:gap-4 xl:gap-6"
         >
           {NAV_LINKS.map((item) => (
             <button
               key={item.href}
               type="button"
               onClick={() => handleNavClick(item.href)}
-              className="py-2 text-xs font-medium uppercase tracking-[0.14em] text-[#EAF7FA]/90 hover:text-[#C8A26B] transition-colors cursor-pointer"
+              className="py-2 text-[11px] xl:text-xs font-medium uppercase tracking-[0.1em] xl:tracking-[0.13em] text-[#EAF7FA]/90 hover:text-[#C8A26B] transition-colors cursor-pointer whitespace-nowrap"
             >
               {item.label}
             </button>
@@ -96,10 +96,10 @@ export function Navbar() {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2.5 xl:gap-3">
           <a
             href="tel:+12145550192"
-            className="hidden xl:inline-flex items-center text-xs font-medium tracking-[0.08em] text-[#EAF7FA]/85 hover:text-white px-3 py-2"
+            className="hidden 2xl:inline-flex items-center text-xs font-medium tracking-[0.08em] text-[#EAF7FA]/85 hover:text-white px-2.5 py-2 whitespace-nowrap"
           >
             (214) 555-0192
           </a>
@@ -107,7 +107,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => handleNavClick("#booking")}
-            className="inline-flex h-11 items-center gap-1.5 sm:gap-2 rounded-full border border-white/45 bg-white/10 px-3.5 sm:px-5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-[#FFFDFA] hover:bg-[#FFFDFA] hover:text-[#13232C] transition-all cursor-pointer whitespace-nowrap"
+            className="inline-flex h-10 items-center gap-1.5 sm:gap-2 rounded-full border border-white/45 bg-white/10 px-3.5 sm:px-4.5 text-[11px] xl:text-xs font-semibold uppercase tracking-[0.11em] text-[#FFFDFA] hover:bg-[#FFFDFA] hover:text-[#13232C] transition-all cursor-pointer whitespace-nowrap"
           >
             <span className="sm:hidden">Book</span>
             <span className="hidden sm:inline">Schedule Now</span>

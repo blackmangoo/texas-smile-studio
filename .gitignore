@@ -11,6 +11,7 @@
 .env
 .env*.local
 /.data/
+/.claude/
 
 # Raw source videos & raw logo source (large source binaries)
 /assets/raw/*

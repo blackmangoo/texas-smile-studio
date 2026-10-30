@@ -35,7 +35,49 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Synchronized CSS <-> JS scene pinning contract:
+   - Phones, tablets, and pure touch devices ((max-width: 1023px) or (hover: none) and (pointer: coarse))
+     use native GPU compositor CSS `position: sticky` inside an explicit scroll runway.
+   - Desktops and laptops (including Windows 11 touchscreen laptops that also have a fine trackpad/mouse,
+     where `hover: hover` is true) use GSAP ScrollTrigger pinning + Lenis smooth inertia. */
+@media (max-width: 1023px), (hover: none) and (pointer: coarse) {
+  .scene-sticky-track {
+    height: var(--mobile-track-h, 310svh);
+  }
+  .scene-sticky-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .scene-sticky-track {
+    height: auto;
+  }
+  .scene-sticky-stage {
+    position: relative;
+    height: 100vh;
+  }
+}
+
+/* On 150%-scaled 1080p laptops (e.g. 1280x600-680 CSS px), collapse secondary intro copy
+   so all 3 chapter cards + heading + CTA keep >35px clearance below the fixed navbar. */
+@media (min-width: 1024px) and (max-height: 690px) {
+  .scene-compact-hide {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .scene-sticky-track {
+    height: auto !important;
+  }
+  .scene-sticky-stage {
+    position: relative !important;
+    height: auto !important;
+    min-height: 100svh;
+  }
   *,
   *::before,
   *::after {

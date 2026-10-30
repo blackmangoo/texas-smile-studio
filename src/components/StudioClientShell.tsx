@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { registerLenis } from "@/lib/scrollBus";
+import { TOUCH_STICKY_MEDIA_QUERY } from "@/lib/useSceneScrollScrub";
 import type { ServiceId } from "@/lib/bookingSchema";
 import { Navbar } from "@/components/Navbar";
 import { HeroSceneSection } from "@/components/HeroSceneSection";
@@ -17,7 +18,6 @@ import { BookingAndFooterSection } from "@/components/BookingAndFooterSection";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
-  // Prevent iOS Safari / Android Chrome URL-bar collapse from triggering mid-swipe ScrollTrigger.refresh() jank
   ScrollTrigger.config({
     ignoreMobileResize: true,
     limitCallbacks: true,
@@ -32,11 +32,13 @@ export function StudioClientShell() {
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
-    const isCoarseTouch = window.matchMedia("(pointer: coarse)").matches;
+    const isTouchStickyTier = window.matchMedia(
+      TOUCH_STICKY_MEDIA_QUERY
+    ).matches;
 
-    // On touch phones/tablets, let native 60/120Hz hardware touch inertia run directly
-    // without a redundant Lenis rAF ticker competing on the main thread.
-    if (reducedMotion || isCoarseTouch) {
+    // Phones & pure-touch tablets use native 60/120Hz hardware touch scroll + sticky rAF damper.
+    // Desktops & laptops (including touchscreen Windows laptops with `hover: hover`) get Lenis.
+    if (reducedMotion || isTouchStickyTier) {
       registerLenis(null);
       if (document.fonts?.ready) {
         document.fonts.ready.then(() => {
