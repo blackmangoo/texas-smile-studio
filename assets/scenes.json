@@ -1,0 +1,81 @@
+{
+  "$comment": "Single source of truth for the 3 flagship 10-second master sequences (Quality over Quantity). Used by tools/bgcheck_all.py, tools/bgfix.py, Phase 3 frame pipeline, and the Next.js runtime.",
+  "palette": {
+    "porcelain": "F6F3EE",
+    "ivory": "FFFDFA",
+    "lagoon": "0F5F6E",
+    "lagoonSpotlight": "177A8C",
+    "deepLagoon": "0B3A45",
+    "midnight": "0A1C24",
+    "coralRoseStage": "9E2A3B",
+    "coralRoseSpotlight": "C84B59",
+    "blush": "F7E4D8",
+    "champagne": "C8A26B",
+    "coral": "EE8A6F",
+    "seafoam": "8CCBC3",
+    "honey": "F2C38B",
+    "aqua": "63E6D9",
+    "pearl": "EAF7FA"
+  },
+  "source": {
+    "aspect": "16:9",
+    "width": 1920,
+    "height": 1080,
+    "fps": 24,
+    "durationSeconds": 10,
+    "fallbackDurationSeconds": 8,
+    "expectedFrames10s": 240,
+    "expectedFrames8s": 192
+  },
+  "safeArea": {
+    "subject": { "w": 0.48, "h": 0.72 },
+    "outerBorderEmpty": 0.18,
+    "feather": 0.08,
+    "mobileCrop": {
+      "w": 0.5625,
+      "h": 1.0,
+      "aspect": "9:10",
+      "pixelWidth": 1080,
+      "pixelHeight": 1080
+    }
+  },
+  "scenes": [
+    {
+      "id": "scene-01-hero",
+      "filename": "scene-01-hero.mp4",
+      "title": "The Architectural Smile — Full Arch & Restorative Articulation",
+      "section": "Hero (Oralxe-Class Centerpiece Stage)",
+      "bgKey": "lagoon",
+      "bgHex": "#0F5F6E",
+      "bgRgb": [15, 95, 110],
+      "centerGlowHex": "#177A8C",
+      "altCoralRoseBgHex": "#9E2A3B",
+      "scrollBehavior": "pinned-scrub",
+      "scrollLengthVh": 320
+    },
+    {
+      "id": "scene-02-implant",
+      "filename": "scene-02-implant.mp4",
+      "title": "Horological Prosthodontics — Titanium Implant, Gold Abutment & Porcelain Crown",
+      "section": "Services & Craftsmanship Chapter",
+      "bgKey": "porcelain",
+      "bgHex": "#F6F3EE",
+      "bgRgb": [246, 243, 238],
+      "centerGlowHex": "#FFFDFA",
+      "scrollBehavior": "pinned-scrub",
+      "scrollLengthVh": 260
+    },
+    {
+      "id": "scene-03-scan-whitening",
+      "filename": "scene-03-scan-whitening.mp4",
+      "title": "3D Optical Topography, Clear Aligner Seating & Luminous Enamel Sweep",
+      "section": "Technology, Orthodontics & Whitening Chapter",
+      "bgKey": "midnight",
+      "bgHex": "#0A1C24",
+      "bgRgb": [10, 28, 36],
+      "centerGlowHex": "#0B3A45",
+      "scrollBehavior": "pinned-scrub",
+      "scrollLengthVh": 260
+    }
+  ]
+}

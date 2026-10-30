@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Texas Smile Studio — Phase 1 palette & type board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..600,50..100&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --porcelain:#F6F3EE; --ivory:#FFFDFA; --ink:#13232C; --slate:#4B5D66; --hairline:#E6E0D6;
+    --lagoon:#0F5F6E; --deep:#0B3A45; --midnight:#0A1C24;
+    --champagne:#C8A26B; --bronze:#8A6631; --coral:#EE8A6F; --terracotta:#A84A33; --seafoam:#8CCBC3; --blush:#F7E4D8; --honey:#F2C38B;
+    --aqua:#63E6D9; --pearl:#EAF7FA; --mist:#9FB7BE;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--porcelain);color:var(--ink);font:400 17px/1.6 "Instrument Sans",system-ui,sans-serif;padding:56px;width:1440px}
+  h1{font:400 64px/1.05 Fraunces,serif;font-variation-settings:"SOFT" 100,"opsz" 144;letter-spacing:-.02em}
+  h2{font:500 13px/1 "Instrument Sans";letter-spacing:.14em;text-transform:uppercase;color:var(--slate);margin:48px 0 16px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .sw{width:150px;border-radius:20px;overflow:hidden;background:var(--ivory);border:1px solid var(--hairline)}
+  .sw i{display:block;height:96px}
+  .sw p{padding:10px 12px;font-size:13px;line-height:1.35}
+  .sw b{display:block;font-weight:600}
+  .grad{height:110px;border-radius:24px;flex:1;min-width:300px;display:flex;align-items:flex-end;padding:14px 16px;font-size:13px;font-weight:500}
+  .deep{background:var(--midnight);color:var(--pearl);border-radius:28px;padding:40px;margin-top:16px;position:relative;overflow:hidden}
+  .deep::before{content:"";position:absolute;inset:-40% 30% 20% -10%;background:radial-gradient(closest-side,rgba(99,230,217,.28),transparent);}
+  .deep h3{font:400 44px/1.1 Fraunces,serif;font-variation-settings:"SOFT" 50,"opsz" 144;position:relative}
+  .deep p{color:var(--mist);position:relative;max-width:60ch}
+  .chip{display:inline-block;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:500;position:relative}
+  .btn{display:inline-flex;align-items:center;height:52px;padding:0 26px;border-radius:999px;font-weight:600;font-size:16px}
+  .type{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:8px}
+  .card{background:var(--ivory);border:1px solid var(--hairline);border-radius:24px;padding:28px;box-shadow:0 30px 60px -30px rgba(15,95,110,.25)}
+</style>
+</head>
+<body>
+  <h1>Texas Smile Studio<br><span style="color:var(--lagoon)">Calm, precise dentistry in Dallas.</span></h1>
+
+  <h2>Foundation — 60%</h2>
+  <div class="row">
+    <div class="sw"><i style="background:#F6F3EE"></i><p><b>Porcelain</b>#F6F3EE · page base</p></div>
+    <div class="sw"><i style="background:#FFFDFA"></i><p><b>Ivory</b>#FFFDFA · cards, surfaces</p></div>
+    <div class="sw"><i style="background:#E6E0D6"></i><p><b>Hairline</b>#E6E0D6 · borders</p></div>
+    <div class="sw"><i style="background:#13232C"></i><p><b>Ink</b>#13232C · text 14.5:1</p></div>
+    <div class="sw"><i style="background:#4B5D66"></i><p><b>Slate</b>#4B5D66 · body-2 6.2:1</p></div>
+  </div>
+
+  <h2>Primary & secondary — 30%</h2>
+  <div class="row">
+    <div class="sw"><i style="background:#0F5F6E"></i><p><b>Lagoon</b>#0F5F6E · brand, CTAs, links</p></div>
+    <div class="sw"><i style="background:#0B3A45"></i><p><b>Deep Lagoon</b>#0B3A45 · transition</p></div>
+    <div class="sw"><i style="background:#0A1C24"></i><p><b>Midnight</b>#0A1C24 · tech chapter</p></div>
+  </div>
+
+  <h2>Accents — 10%</h2>
+  <div class="row">
+    <div class="sw"><i style="background:#C8A26B"></i><p><b>Champagne</b>#C8A26B · hairlines, numerals (dark only)</p></div>
+    <div class="sw"><i style="background:#8A6631"></i><p><b>Bronze</b>#8A6631 · champagne-as-text on light</p></div>
+    <div class="sw"><i style="background:#EE8A6F"></i><p><b>Coral</b>#EE8A6F · warmth, pediatric, highlights</p></div>
+    <div class="sw"><i style="background:#A84A33"></i><p><b>Terracotta</b>#A84A33 · coral-as-text, errors</p></div>
+    <div class="sw"><i style="background:#8CCBC3"></i><p><b>Seafoam</b>#8CCBC3 · calm tags, aligners</p></div>
+    <div class="sw"><i style="background:#F7E4D8"></i><p><b>Blush</b>#F7E4D8 · dawn wash</p></div>
+    <div class="sw"><i style="background:#F2C38B"></i><p><b>Honey</b>#F2C38B · pediatric only</p></div>
+  </div>
+
+  <h2>Glow (Midnight chapter only)</h2>
+  <div class="row">
+    <div class="sw"><i style="background:#63E6D9"></i><p><b>Aqua glow</b>#63E6D9 · scan light 11.5:1</p></div>
+    <div class="sw"><i style="background:#EAF7FA"></i><p><b>Pearl</b>#EAF7FA · whitening glow, text</p></div>
+    <div class="sw"><i style="background:#9FB7BE"></i><p><b>Mist</b>#9FB7BE · body text on dark 8.3:1</p></div>
+  </div>
+
+  <h2>Gradients</h2>
+  <div class="row">
+    <div class="grad" style="background:linear-gradient(160deg,#F7E4D8 0%,#F6F3EE 45%,#DCEFEC 100%)">Dawn — hero wash</div>
+    <div class="grad" style="background:linear-gradient(180deg,#F6F3EE 0%,#0F5F6E 45%,#0B3A45 70%,#0A1C24 100%);color:#EAF7FA">Descent — light → depth</div>
+    <div class="grad" style="background:radial-gradient(60% 90% at 30% 50%,rgba(234,247,250,.95),rgba(99,230,217,.35) 45%,#0A1C24 80%);color:#EAF7FA;justify-content:flex-end">Whitening sweep — glow</div>
+    <div class="grad" style="background:linear-gradient(90deg,#8A6631,#C8A26B 50%,#8A6631);color:#FFFDFA">Champagne hairline</div>
+  </div>
+
+  <div class="deep">
+    <span class="chip" style="background:rgba(99,230,217,.12);color:#63E6D9;border:1px solid rgba(99,230,217,.35)">Inside the technology</span>
+    <h3 style="margin-top:18px">A 3D scan in under a minute.<br>No goop, no guesswork.</h3>
+    <p style="margin-top:12px">Midnight chapter: Pearl headings, Mist body, Aqua glow used for light only, Champagne for numerals.</p>
+    <p style="margin-top:18px;position:relative"><span style="font:400 48px/1 Fraunces;color:#C8A26B">0.02</span> <span style="color:#9FB7BE">mm scan accuracy (placeholder)</span></p>
+  </div>
+
+  <h2>Type & components</h2>
+  <div class="type">
+    <div class="card">
+      <p style="font:400 52px/1.05 Fraunces;font-variation-settings:'SOFT' 100,'opsz' 144;letter-spacing:-.02em">Fraunces — display</p>
+      <p style="font:400 30px/1.2 Fraunces;font-variation-settings:'SOFT' 50,'opsz' 48;margin-top:10px">Soft optical serif for warmth</p>
+      <p style="margin-top:16px;font-size:18px">Instrument Sans — body 17–18px. Clear, modern, slightly humanist. Line length 60–72ch, line-height 1.6.</p>
+      <p style="margin-top:8px;color:#4B5D66">Slate secondary text still passes AA at 6.2:1.</p>
+    </div>
+    <div class="card">
+      <div class="row" style="align-items:center">
+        <span class="btn" style="background:#0F5F6E;color:#fff">Book a visit</span>
+        <span class="btn" style="border:1.5px solid #13232C">See treatments</span>
+      </div>
+      <div class="row" style="margin-top:20px">
+        <span class="chip" style="background:#DCEFEC;color:#0F5F6E">Clear aligners</span>
+        <span class="chip" style="background:#F7E4D8;color:#A84A33">Kids welcome</span>
+        <span class="chip" style="background:#F3EBDD;color:#8A6631">Same-day crowns</span>
+      </div>
+      <p style="margin-top:20px;font-size:15px;color:#4B5D66">Pill buttons, 52px tall (≥44px target), 20–28px card radius, hairline borders, lagoon-tinted long shadows. No glass, no neon, no shield/sparkle icons.</p>
+    </div>
+  </div>
+</body>
+</html>

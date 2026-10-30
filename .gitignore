@@ -1,0 +1,33 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js build output
+/.next/
+/out/
+
+# Local runtime data & secrets
+.env
+.env*.local
+/.data/
+
+# Raw source videos (large source binaries)
+/assets/raw/*.mp4
+
+# Test run artifacts & transient QA screenshots
+/docs/phase-5-qa/
+/docs/qa-screenshots/
+/docs/video-audit/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
