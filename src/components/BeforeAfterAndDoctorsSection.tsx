@@ -130,7 +130,7 @@ export function BeforeAfterAndDoctorsSection() {
                 <picture className="pointer-events-none absolute inset-0 h-full w-full">
                   <source
                     media="(max-width: 767px)"
-                    srcSet="/frames/scene-03-scan-whitening/mobile/frame_0064.webp"
+                    srcSet="/frames/scene-03-scan-whitening/mobile/frame_v3_0144.webp"
                   />
                   <img
                     src="/frames/scene-03-scan-whitening/desktop/frame_0180.webp"
@@ -149,7 +149,7 @@ export function BeforeAfterAndDoctorsSection() {
                   <picture className="block h-full w-full">
                     <source
                       media="(max-width: 767px)"
-                      srcSet="/frames/scene-03-scan-whitening/mobile/frame_0022.webp"
+                      srcSet="/frames/scene-03-scan-whitening/mobile/frame_v3_0048.webp"
                     />
                     <img
                       src="/frames/scene-03-scan-whitening/desktop/frame_0060.webp"

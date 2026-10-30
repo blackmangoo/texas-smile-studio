@@ -31,7 +31,8 @@ export interface ScrollSceneConfig {
     height: number;
     frameCount: number;
     poster: string;
-    dir: string;
+    packBin: string;
+    packJson: string;
   };
   acts: [SceneChapterAct, SceneChapterAct, SceneChapterAct];
 }
@@ -46,7 +47,7 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
     canvasMaskCss:
       "radial-gradient(49% 49% at 50% 50%, #000 66%, rgba(0,0,0,0.55) 83%, transparent 98%)",
     scrollLengthVh: 300,
-    mobileScrollLengthVh: 190,
+    mobileScrollLengthVh: 240,
     desktop: {
       width: 1920,
       height: 1080,
@@ -55,11 +56,12 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
       dir: "/frames/scene-01-hero/desktop",
     },
     mobile: {
-      width: 640,
+      width: 854,
       height: 480,
-      frameCount: 64,
-      poster: "/frames/scene-01-hero/poster-mobile.webp",
-      dir: "/frames/scene-01-hero/mobile",
+      frameCount: 144,
+      poster: "/frames/scene-01-hero/poster-mobile-v3.webp",
+      packBin: "/frames/scene-01-hero/mobile-pack-v3.bin",
+      packJson: "/frames/scene-01-hero/mobile-pack-v3.json",
     },
     acts: [
       {
@@ -97,13 +99,13 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
   "scene-02-implant": {
     id: "scene-02-implant",
     title: "Watchmaking Tolerances in Restorative Dentistry",
-    eyebrow: "PROSTHODONTIC CRAFTSMANSHIP · SCENE 02",
+    eyebrow: "PROSTHODONTIC CRAFTSMANSHIP",
     sectionBgHex: "#E6DFD1",
     spotlightHex: "#F7F3EB",
     canvasMaskCss:
       "radial-gradient(49% 49% at 50% 50%, #000 68%, rgba(0,0,0,0.55) 84%, transparent 98%)",
     scrollLengthVh: 250,
-    mobileScrollLengthVh: 165,
+    mobileScrollLengthVh: 210,
     desktop: {
       width: 1920,
       height: 1080,
@@ -112,11 +114,12 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
       dir: "/frames/scene-02-implant/desktop",
     },
     mobile: {
-      width: 640,
+      width: 854,
       height: 480,
-      frameCount: 64,
-      poster: "/frames/scene-02-implant/poster-mobile.webp",
-      dir: "/frames/scene-02-implant/mobile",
+      frameCount: 144,
+      poster: "/frames/scene-02-implant/poster-mobile-v3.webp",
+      packBin: "/frames/scene-02-implant/mobile-pack-v3.bin",
+      packJson: "/frames/scene-02-implant/mobile-pack-v3.json",
     },
     acts: [
       {
@@ -154,13 +157,13 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
   "scene-03-scan-whitening": {
     id: "scene-03-scan-whitening",
     title: "60-Second Optical Scan to Radiant Pearl Enamel",
-    eyebrow: "DIGITAL DIAGNOSTICS & WHITENING · SCENE 03",
+    eyebrow: "DIGITAL DIAGNOSTICS & WHITENING",
     sectionBgHex: "#010304",
     spotlightHex: "#092C36",
     canvasMaskCss:
       "radial-gradient(50% 49% at 50% 50%, #000 72%, rgba(0,0,0,0.5) 86%, transparent 98%)",
     scrollLengthVh: 250,
-    mobileScrollLengthVh: 165,
+    mobileScrollLengthVh: 210,
     desktop: {
       width: 1920,
       height: 1080,
@@ -169,11 +172,12 @@ export const SCROLL_SCENES: Record<ScrollSceneConfig["id"], ScrollSceneConfig> =
       dir: "/frames/scene-03-scan-whitening/desktop",
     },
     mobile: {
-      width: 640,
+      width: 854,
       height: 480,
-      frameCount: 64,
-      poster: "/frames/scene-03-scan-whitening/poster-mobile.webp",
-      dir: "/frames/scene-03-scan-whitening/mobile",
+      frameCount: 144,
+      poster: "/frames/scene-03-scan-whitening/poster-mobile-v3.webp",
+      packBin: "/frames/scene-03-scan-whitening/mobile-pack-v3.bin",
+      packJson: "/frames/scene-03-scan-whitening/mobile-pack-v3.json",
     },
     acts: [
       {

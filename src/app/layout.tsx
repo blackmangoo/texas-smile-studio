@@ -143,7 +143,7 @@ export default function RootLayout({
         <link
           rel="preload"
           as="image"
-          href="/frames/scene-01-hero/poster-mobile.webp"
+          href="/frames/scene-01-hero/poster-mobile-v3.webp"
           type="image/webp"
           media="(max-width: 767px)"
         />
