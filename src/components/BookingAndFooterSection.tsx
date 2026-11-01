@@ -788,12 +788,37 @@ export function BookingAndFooterSection({
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#9FB7BE]">
-            <p>
+          <div className="mt-10 pt-8 border-t border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-xs text-[#9FB7BE]">
+            <p className="order-2 md:order-1">
               © {new Date().getFullYear()} Texas Smile Studio PLLC · Dallas,
               Texas. All rights reserved.
             </p>
-            <p>
+
+            {/* Architectural Creator Signature — Designed by Ammar · ammar.works */}
+            <div className="order-1 md:order-2 flex items-center gap-2.5">
+              <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#9FB7BE]/70 hidden sm:inline">
+                Architecture & Experience
+              </span>
+              <a
+                href="https://ammar.works"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Designed by Ammar — Visit portfolio at ammar.works"
+                className="group relative inline-flex items-center gap-2 rounded-full border border-[#C8A26B]/40 bg-white/[0.04] px-4 py-1.5 text-xs text-[#FFFDFA] shadow-[0_10px_25px_-10px_rgba(200,162,107,0.3)] backdrop-blur-xs hover:border-[#C8A26B] hover:bg-[#C8A26B]/15 hover:shadow-[0_0_25px_rgba(200,162,107,0.35)] hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <span className="text-[#9FB7BE] text-xs font-normal">Designed by</span>
+                <span className="font-serif text-[13px] font-semibold tracking-wide text-[#C8A26B] group-hover:text-[#FFFDFA] transition-colors">
+                  Ammar
+                </span>
+                <span className="h-1 w-1 rounded-full bg-[#C8A26B]/60" />
+                <span className="font-mono text-[11px] text-[#EAF7FA]/80 group-hover:text-[#C8A26B] transition-colors">
+                  ammar.works
+                </span>
+                <ArrowUpRightIcon className="w-3.5 h-3.5 text-[#C8A26B] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </a>
+            </div>
+
+            <p className="order-3 text-[11px] text-[#9FB7BE]/80">
               HIPAA-Safe Online Scheduling · Contact: {CONCIERGE_EMAIL}
             </p>
           </div>
