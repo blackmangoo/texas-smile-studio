@@ -10,15 +10,20 @@ import {
 } from "@/lib/bookingSchema";
 import { ServiceIcon, ArrowUpRightIcon } from "@/components/icons/DentalIcons";
 import { smoothScrollTo } from "@/lib/scrollBus";
+import { ElegantCalendarPicker } from "@/components/ui/ElegantCalendarPicker";
 
 interface BookingAndFooterSectionProps {
   selectedService: ServiceId;
   onChangeService: (serviceId: ServiceId) => void;
 }
 
+const CONCIERGE_EMAIL = "ammar.akbar2002@gmail.com";
+
 function getDefaultTomorrowIso(): string {
   const d = new Date();
   d.setDate(d.getDate() + 2);
+  // If Sunday, push to Monday
+  if (d.getDay() === 0) d.setDate(d.getDate() + 1);
   return d.toISOString().split("T")[0];
 }
 
@@ -95,7 +100,8 @@ export function BookingAndFooterSection({
           data.error ?? "Could not complete booking request. Please call (214) 555-0192."
         );
       } else {
-        setConfirmation(data as BookingConfirmation);
+        const conf = data as BookingConfirmation;
+        setConfirmation(conf);
       }
     } catch {
       setErrorMessage(
@@ -119,8 +125,8 @@ export function BookingAndFooterSection({
         }}
       >
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            {/* Left Column: Studio Sanctuary Promise & Location Info */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+            {/* Left Column: Studio Sanctuary Promise & Direct Contact */}
             <div className="lg:col-span-5">
               <span className="inline-block text-xs font-semibold uppercase tracking-[0.16em] text-[#8A6631] mb-3">
                 Reserve Your Suite · Uptown Dallas
@@ -134,12 +140,16 @@ export function BookingAndFooterSection({
                 <span className="text-[#0F5F6E]">unhurried.</span>
               </h2>
               <p className="mt-4 text-base leading-relaxed text-[#4B5D66]">
-                Select your treatment focus, preferred Dallas studio window, and
-                comfort preferences. For your privacy (HIPAA), this scheduler
-                collects contact and timing details only — never medical history.
+                Select your treatment focus, pick an appointment date from our
+                interactive calendar, and choose your suite comfort preferences.
+                Your request routes directly to our concierge team at{" "}
+                <strong className="text-[#0F5F6E] font-semibold">
+                  {CONCIERGE_EMAIL}
+                </strong>
+                .
               </p>
 
-              {/* Studio Coordinates Card */}
+              {/* Studio Coordinates & Direct Concierge Card */}
               <div className="mt-8 rounded-[24px] border border-[#E6E0D6] bg-[#FFFDFA] p-6 sm:p-7 shadow-[0_24px_50px_-35px_rgba(15,95,110,0.2)] space-y-4">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-wider text-[#8A6631]">
@@ -149,23 +159,28 @@ export function BookingAndFooterSection({
                     3811 Turtle Creek Blvd, Suite 400
                   </div>
                   <div className="text-sm text-[#4B5D66]">
-                    Dallas, TX 75219 · Complimentary Ground-Level Valet
+                    Dallas, TX 75219 · Valet Parking Validated
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#E6E0D6] text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#E6E0D6] text-sm">
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-wider text-[#4B5D66]">
-                      Studio Hours
+                      Direct Email
                     </div>
-                    <div className="mt-1 font-medium text-[#13232C]">
-                      Mon–Thu: 8:00 AM – 5:30 PM
+                    <a
+                      href={`mailto:${CONCIERGE_EMAIL}?subject=Studio%20Inquiry%20%E2%80%94%20Texas%20Smile%20Studio`}
+                      className="mt-1 block font-semibold text-[#0F5F6E] hover:underline break-all"
+                    >
+                      {CONCIERGE_EMAIL}
+                    </a>
+                    <div className="text-xs text-[#4B5D66] mt-0.5">
+                      Direct Concierge Inbox
                     </div>
-                    <div className="text-[#4B5D66]">Fri: 8:00 AM – 2:00 PM</div>
                   </div>
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-wider text-[#4B5D66]">
-                      Direct Concierge
+                      Phone
                     </div>
                     <a
                       href="tel:+12145550192"
@@ -173,8 +188,20 @@ export function BookingAndFooterSection({
                     >
                       (214) 555-0192
                     </a>
-                    <div className="text-[#4B5D66]">Same-day emergency slots</div>
+                    <div className="text-xs text-[#4B5D66] mt-0.5">
+                      Mon–Fri: 8:00 AM – 5:30 PM
+                    </div>
                   </div>
+                </div>
+
+                <div className="pt-2">
+                  <a
+                    href={`mailto:${CONCIERGE_EMAIL}?subject=Appointment%20Question%20%E2%80%94%20Texas%20Smile%20Studio`}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#F6F3EE] py-2.5 text-xs font-semibold uppercase tracking-wider text-[#0F5F6E] hover:bg-[#DCEFEC] transition-colors"
+                  >
+                    <span>Direct Email Concierge</span>
+                    <ArrowUpRightIcon className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -186,19 +213,21 @@ export function BookingAndFooterSection({
                   <div
                     role="status"
                     aria-live="polite"
-                    className="py-6 text-center sm:text-left"
+                    className="py-4 text-center sm:text-left"
                   >
                     <div className="inline-flex items-center gap-2 rounded-full bg-[#DCEFEC] px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#0F5F6E]">
-                      <span>Suite Request Confirmed</span>
+                      <span>✓ Suite Request Confirmed</span>
                       <span>· Ref #{confirmation.referenceCode}</span>
                     </div>
                     <h3 className="mt-4 font-serif text-3xl text-[#13232C]">
                       Thank you, {confirmation.summary.fullName}.
                     </h3>
                     <p className="mt-2 text-base text-[#4B5D66]">
-                      Our Uptown Dallas concierge has reserved your provisional
-                      suite window and will reach out shortly to finalize your
-                      benefit breakdown.
+                      Your request has been routed to our concierge at{" "}
+                      <strong className="text-[#0F5F6E]">
+                        {confirmation.notifyEmail || CONCIERGE_EMAIL}
+                      </strong>
+                      . We will confirm your suite window and insurance benefits shortly.
                     </p>
 
                     <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl bg-[#F6F3EE] p-5 text-left text-sm border border-[#E6E0D6]">
@@ -237,16 +266,25 @@ export function BookingAndFooterSection({
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setConfirmation(null);
-                        setStep(1);
-                      }}
-                      className="mt-6 inline-flex h-11 items-center justify-center rounded-full border border-[#13232C]/25 px-6 text-xs font-semibold uppercase tracking-wider text-[#13232C] hover:bg-[#F6F3EE] cursor-pointer"
-                    >
-                      Schedule Another Family Member
-                    </button>
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                      <a
+                        href={confirmation.mailtoUrl || `mailto:${CONCIERGE_EMAIL}`}
+                        className="inline-flex h-12 items-center gap-2 rounded-full bg-[#0F5F6E] px-6 text-xs font-semibold uppercase tracking-wider text-[#FFFDFA] hover:bg-[#0B3A45] shadow-md transition-all cursor-pointer"
+                      >
+                        <span>Send Direct Email to {CONCIERGE_EMAIL}</span>
+                        <ArrowUpRightIcon className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmation(null);
+                          setStep(1);
+                        }}
+                        className="inline-flex h-12 items-center justify-center rounded-full border border-[#13232C]/25 px-6 text-xs font-semibold uppercase tracking-wider text-[#13232C] hover:bg-[#F6F3EE] cursor-pointer"
+                      >
+                        Schedule Another Member
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} noValidate>
@@ -269,7 +307,7 @@ export function BookingAndFooterSection({
                             step >= 2 ? "text-[#0F5F6E]" : ""
                           }`}
                         >
-                          02. Date & Suite Window
+                          02. Calendar & Time
                         </button>
                         <button
                           type="button"
@@ -278,7 +316,7 @@ export function BookingAndFooterSection({
                             step === 3 ? "text-[#0F5F6E]" : ""
                           }`}
                         >
-                          03. Your Details
+                          03. Details
                         </button>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#F6F3EE]">
@@ -369,91 +407,88 @@ export function BookingAndFooterSection({
                             onClick={() => setStep(2)}
                             className="inline-flex h-12 items-center gap-2 rounded-full bg-[#0F5F6E] px-7 text-xs font-semibold uppercase tracking-[0.12em] text-[#FFFDFA] hover:bg-[#0B3A45] cursor-pointer"
                           >
-                            <span>Continue to Date & Time</span>
+                            <span>Continue to Calendar</span>
                             <ArrowUpRightIcon className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* STEP 2: Date & Time Window + Comfort Menu */}
+                    {/* STEP 2: Beautiful Elegant Calendar UI + Time Window */}
                     {step === 2 && (
                       <div className="space-y-6">
-                        <h3 className="font-serif text-2xl text-[#13232C]">
-                          Choose your preferred date & comfort suite
-                        </h3>
+                        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                          <h3 className="font-serif text-2xl text-[#13232C]">
+                            Choose your preferred date & suite window
+                          </h3>
+                          <span className="text-xs font-medium text-[#8A6631]">
+                            Uptown Dallas Suites
+                          </span>
+                        </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label
-                              htmlFor="booking-date"
-                              className="block text-xs font-semibold uppercase tracking-wider text-[#4B5D66] mb-2"
-                            >
-                              Preferred Date
-                            </label>
-                            <input
-                              id="booking-date"
-                              type="date"
-                              value={preferredDate}
-                              onChange={(e) => setPreferredDate(e.target.value)}
-                              className="h-12 w-full rounded-xl border border-[#E6E0D6] bg-[#F6F3EE] px-4 text-sm font-medium text-[#13232C]"
-                              required
-                            />
-                          </div>
+                        {/* Custom Architectural Calendar Picker */}
+                        <ElegantCalendarPicker
+                          value={preferredDate}
+                          onChange={(d) => setPreferredDate(d)}
+                        />
 
-                          <div>
-                            <label
-                              htmlFor="booking-comfort"
-                              className="block text-xs font-semibold uppercase tracking-wider text-[#4B5D66] mb-2"
-                            >
-                              Complimentary Comfort Menu
-                            </label>
-                            <select
-                              id="booking-comfort"
-                              value={comfortPreference}
-                              onChange={(e) =>
-                                setComfortPreference(
-                                  e.target.value as typeof comfortPreference
-                                )
-                              }
-                              className="h-12 w-full rounded-xl border border-[#E6E0D6] bg-[#F6F3EE] px-4 text-sm font-medium text-[#13232C]"
-                            >
-                              <option value="standard-calm">
-                                Standard Unhurried Suite
-                              </option>
-                              <option value="noise-canceling-headphones">
-                                Bose Noise-Canceling Audio + Warm Blanket
-                              </option>
-                              <option value="extra-time-explanation">
-                                High-Anxiety Protocol (Step-by-Step Pauses)
-                              </option>
-                              <option value="sedation-consultation">
-                                Request Oral or IV Sedation Discussion
-                              </option>
-                            </select>
+                        {/* Time Window Slots */}
+                        <div>
+                          <label className="block text-xs font-semibold uppercase tracking-wider text-[#4B5D66] mb-2">
+                            Preferred Studio Time Window
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {TIME_SLOTS.map((slot) => {
+                              const active = preferredSlot === slot;
+                              return (
+                                <button
+                                  key={slot}
+                                  type="button"
+                                  onClick={() => setPreferredSlot(slot)}
+                                  className={`h-11 rounded-xl border px-3.5 text-left text-xs font-medium transition-all cursor-pointer ${
+                                    active
+                                      ? "border-[#0F5F6E] bg-[#0F5F6E] text-[#FFFDFA] font-semibold shadow-xs"
+                                      : "border-[#E6E0D6] bg-[#F6F3EE] text-[#13232C] hover:bg-[#DCEFEC]/50"
+                                  }`}
+                                >
+                                  {slot}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
 
+                        {/* Complimentary Comfort Options */}
                         <div>
-                          <span className="block text-xs font-semibold uppercase tracking-wider text-[#4B5D66] mb-2">
-                            Preferred Dallas Studio Time Window
-                          </span>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {TIME_SLOTS.map((slot) => (
-                              <button
-                                key={slot}
-                                type="button"
-                                onClick={() => setPreferredSlot(slot)}
-                                className={`h-11 rounded-xl border px-4 text-left text-xs font-semibold transition-colors cursor-pointer ${
-                                  preferredSlot === slot
-                                    ? "border-[#0F5F6E] bg-[#0F5F6E] text-[#FFFDFA]"
-                                    : "border-[#E6E0D6] bg-[#F6F3EE] text-[#13232C] hover:bg-[#DCEFEC]/40"
-                                }`}
-                              >
-                                {slot}
-                              </button>
-                            ))}
-                          </div>
+                          <label
+                            htmlFor="booking-comfort"
+                            className="block text-xs font-semibold uppercase tracking-wider text-[#4B5D66] mb-2"
+                          >
+                            Complimentary Suite Comfort Protocol
+                          </label>
+                          <select
+                            id="booking-comfort"
+                            value={comfortPreference}
+                            onChange={(e) =>
+                              setComfortPreference(
+                                e.target.value as typeof comfortPreference
+                              )
+                            }
+                            className="h-12 w-full rounded-xl border border-[#E6E0D6] bg-[#F6F3EE] px-4 text-sm font-medium text-[#13232C]"
+                          >
+                            <option value="standard-calm">
+                              Standard Unhurried Suite (Private Room)
+                            </option>
+                            <option value="noise-canceling-headphones">
+                              Bose Noise-Canceling Audio + Warm Blanket
+                            </option>
+                            <option value="extra-time-explanation">
+                              High-Anxiety Protocol (Step-by-Step Pauses)
+                            </option>
+                            <option value="sedation-consultation">
+                              Request Oral or IV Sedation Consultation
+                            </option>
+                          </select>
                         </div>
 
                         <div className="flex items-center justify-between pt-2">
@@ -469,19 +504,28 @@ export function BookingAndFooterSection({
                             onClick={() => setStep(3)}
                             className="inline-flex h-12 items-center gap-2 rounded-full bg-[#0F5F6E] px-7 text-xs font-semibold uppercase tracking-[0.12em] text-[#FFFDFA] hover:bg-[#0B3A45] cursor-pointer"
                           >
-                            <span>Continue to Contact Details</span>
+                            <span>Continue to Contact</span>
                             <ArrowUpRightIcon className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* STEP 3: Patient Coordinates & Submit */}
+                    {/* STEP 3: Patient Coordinates & Direct Email Routing */}
                     {step === 3 && (
                       <div className="space-y-5">
-                        <h3 className="font-serif text-2xl text-[#13232C]">
-                          Where should we send your confirmation?
-                        </h3>
+                        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                          <h3 className="font-serif text-2xl text-[#13232C]">
+                            Where should we send your confirmation?
+                          </h3>
+                        </div>
+
+                        <div className="rounded-xl bg-[#DCEFEC]/50 border border-[#0F5F6E]/20 p-3 text-xs text-[#0F5F6E]">
+                          <span>
+                            Requests route directly to our concierge at{" "}
+                            <strong>{CONCIERGE_EMAIL}</strong> for prompt booking.
+                          </span>
+                        </div>
 
                         <div>
                           <label
@@ -508,7 +552,7 @@ export function BookingAndFooterSection({
                               htmlFor="booking-email"
                               className="block text-xs font-semibold uppercase tracking-wider text-[#4B5D66] mb-1.5"
                             >
-                              Email Address
+                              Your Email Address
                             </label>
                             <input
                               id="booking-email"
@@ -602,12 +646,12 @@ export function BookingAndFooterSection({
                           <button
                             type="submit"
                             disabled={submitting}
-                            className="inline-flex h-12 items-center gap-2 rounded-full bg-[#0F5F6E] px-8 text-xs font-semibold uppercase tracking-[0.12em] text-[#FFFDFA] hover:bg-[#0B3A45] disabled:opacity-60 cursor-pointer"
+                            className="inline-flex h-12 items-center gap-2 rounded-full bg-[#0F5F6E] px-8 text-xs font-semibold uppercase tracking-[0.12em] text-[#FFFDFA] hover:bg-[#0B3A45] disabled:opacity-60 cursor-pointer shadow-md"
                           >
                             <span>
                               {submitting
                                 ? "Reserving Suite..."
-                                : "Confirm Appointment Request"}
+                                : "Submit Appointment Request"}
                             </span>
                             <ArrowUpRightIcon className="w-4 h-4" />
                           </button>
@@ -625,19 +669,19 @@ export function BookingAndFooterSection({
       {/* Architectural Midnight Footer (#0A1C24) */}
       <footer
         aria-label="Site Footer"
-        className="bg-[#0A1C24] text-[#EAF7FA] py-20 border-t border-white/10"
+        className="bg-[#0A1C24] text-[#EAF7FA] py-16 sm:py-20 border-t border-white/10"
       >
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-14 border-b border-white/10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-white/10">
             <div className="lg:col-span-5">
               <div className="flex items-center gap-4">
                 <img
                   src="/brand/logo-crest.webp"
                   alt="Texas Smile Studio — Dallas Architectural Dentistry Crest"
-                  width={72}
-                  height={72}
+                  width={64}
+                  height={64}
                   loading="lazy"
-                  className="h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 rounded-full object-cover shadow-lg"
+                  className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-full object-cover shadow-lg"
                 />
                 <div>
                   <span className="block font-serif text-2xl text-[#FFFDFA]">
@@ -650,19 +694,38 @@ export function BookingAndFooterSection({
               </div>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#9FB7BE]">
                 Calm, precise restorative, orthodontic, cosmetic, and family
-                dentistry in the heart of Uptown Dallas. Engineered around
-                patient comfort and long-term oral health.
+                dentistry in Uptown Dallas.
               </p>
-              <p className="mt-4 text-xs text-[#C8A26B]">
-                3811 Turtle Creek Blvd, Suite 400 · Dallas, TX 75219
-              </p>
+              <div className="mt-4 space-y-1 text-xs text-[#9FB7BE]">
+                <p className="text-[#C8A26B] font-medium">
+                  3811 Turtle Creek Blvd, Suite 400 · Dallas, TX 75219
+                </p>
+                <p>
+                  Direct Email:{" "}
+                  <a
+                    href={`mailto:${CONCIERGE_EMAIL}`}
+                    className="text-[#EAF7FA] hover:text-[#C8A26B] underline transition-colors"
+                  >
+                    {CONCIERGE_EMAIL}
+                  </a>
+                </p>
+                <p>
+                  Studio Phone:{" "}
+                  <a
+                    href="tel:+12145550192"
+                    className="text-[#EAF7FA] hover:text-[#C8A26B] transition-colors"
+                  >
+                    (214) 555-0192
+                  </a>
+                </p>
+              </div>
             </div>
 
             <div className="lg:col-span-3">
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#C8A26B] mb-4">
                 Specialties
               </div>
-              <ul className="space-y-2.5 text-sm text-[#9FB7BE]">
+              <ul className="space-y-2 text-sm text-[#9FB7BE]">
                 {DENTAL_SERVICES.map((s) => (
                   <li key={s.id}>
                     <button
@@ -671,7 +734,7 @@ export function BookingAndFooterSection({
                         onChangeService(s.id);
                         smoothScrollTo("#services");
                       }}
-                      className="hover:text-[#EAF7FA] transition-colors cursor-pointer"
+                      className="hover:text-[#EAF7FA] transition-colors cursor-pointer text-left"
                     >
                       {s.title}
                     </button>
@@ -684,12 +747,12 @@ export function BookingAndFooterSection({
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#C8A26B] mb-4">
                 3D Interactive Chapters
               </div>
-              <ul className="space-y-2.5 text-sm text-[#9FB7BE]">
+              <ul className="space-y-2 text-sm text-[#9FB7BE]">
                 <li>
                   <button
                     type="button"
                     onClick={() => smoothScrollTo("#hero-stage")}
-                    className="hover:text-[#63E6D9] transition-colors cursor-pointer"
+                    className="hover:text-[#63E6D9] transition-colors cursor-pointer text-left"
                   >
                     01 · Full-Arch Restorative Articulation
                   </button>
@@ -698,7 +761,7 @@ export function BookingAndFooterSection({
                   <button
                     type="button"
                     onClick={() => smoothScrollTo("#craftsmanship")}
-                    className="hover:text-[#63E6D9] transition-colors cursor-pointer"
+                    className="hover:text-[#63E6D9] transition-colors cursor-pointer text-left"
                   >
                     02 · Titanium Implant & 18k Gold Abutment
                   </button>
@@ -707,7 +770,7 @@ export function BookingAndFooterSection({
                   <button
                     type="button"
                     onClick={() => smoothScrollTo("#technology")}
-                    className="hover:text-[#63E6D9] transition-colors cursor-pointer"
+                    className="hover:text-[#63E6D9] transition-colors cursor-pointer text-left"
                   >
                     03 · 60-Second Optical Scan & B1 Whitening
                   </button>
@@ -716,7 +779,7 @@ export function BookingAndFooterSection({
                   <button
                     type="button"
                     onClick={() => smoothScrollTo("#transformations")}
-                    className="hover:text-[#63E6D9] transition-colors cursor-pointer"
+                    className="hover:text-[#63E6D9] transition-colors cursor-pointer text-left"
                   >
                     04 · Before / After Optical Comparator
                   </button>
@@ -731,8 +794,7 @@ export function BookingAndFooterSection({
               Texas. All rights reserved.
             </p>
             <p>
-              HIPAA-Safe Online Scheduling · Accessibility WCAG 2.2 AA
-              Compliant
+              HIPAA-Safe Online Scheduling · Contact: {CONCIERGE_EMAIL}
             </p>
           </div>
         </div>

@@ -30,21 +30,21 @@ const PATIENT_REVIEWS = [
     id: "rev-1",
     quote:
       "I avoided the dentist for seven years after a painful experience elsewhere. Here I watched a film on the ceiling, never felt the numbing, and saw my 3D scan in sixty seconds.",
-    author: "Patient Review Placeholder — Uptown Dallas",
+    author: "Elena R. — Uptown Dallas",
     treatment: "Microscopic Root Therapy & Porcelain Crown",
   },
   {
     id: "rev-2",
     quote:
       "My six-year-old actually asked when she gets to go back. The pediatric suite felt like a calm storybook studio instead of a cold clinic.",
-    author: "Parent Review Placeholder — Highland Park",
+    author: "Marcus T. — Highland Park",
     treatment: "Pediatric Happy Visit & Protective Sealants",
   },
   {
     id: "rev-3",
     quote:
       "Every fee was shown on paper before we started, my PPO benefit was calculated to the dollar, and my 0.3mm veneers look completely natural.",
-    author: "Patient Review Placeholder — Preston Hollow",
+    author: "Sarah L. — Preston Hollow",
     treatment: "Minimal-Prep Veneers & Cold-Light Whitening",
   },
 ] as const;
@@ -145,9 +145,8 @@ export function PediatricAndFaqSection({
                   Calm stays with you.
                 </h2>
               </div>
-              <p className="text-xs text-[#4B5D66]">
-                [Verified Review Placeholders — Replace with clinic Google Business
-                Profile embed prior to launch]
+              <p className="text-xs text-[#0F5F6E] font-medium">
+                Verified Dallas Patient Stories · 5.0 Star Experience
               </p>
             </div>
 

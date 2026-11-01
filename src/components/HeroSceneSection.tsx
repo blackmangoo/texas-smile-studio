@@ -11,7 +11,7 @@ const TRUST_METRICS = [
   {
     value: "60 sec",
     label: "3D Optical Digital Scan",
-    detail: "Zero gag-inducing putty molds",
+    detail: "Zero gag-inducing putty impressions",
   },
   {
     value: "0.3 mm",
@@ -20,8 +20,8 @@ const TRUST_METRICS = [
   },
   {
     value: "98.6%",
-    label: "3D Guided Implant Precision*",
-    detail: "Grade-5 Titanium + 18k Gold Abutment",
+    label: "Guided Implant Accuracy",
+    detail: "Grade-5 Titanium + 18k Gold Collar",
   },
   {
     value: "Calm-First",

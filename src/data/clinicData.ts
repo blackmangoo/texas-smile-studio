@@ -225,7 +225,7 @@ export interface DentalServiceItem {
   accentTag: string;
   accentTone: "lagoon" | "bronze" | "terracotta";
   linkedSceneAnchor: string;
-  highlights: [string, string, string];
+  highlights: string[];
 }
 
 export const DENTAL_SERVICES: DentalServiceItem[] = [
@@ -233,9 +233,9 @@ export const DENTAL_SERVICES: DentalServiceItem[] = [
     id: "implants",
     number: "01",
     title: "Guided Dental Implants",
-    tagline: "Biomechanical permanence engineered to feel like your own tooth.",
+    tagline: "Permanent, bio-integrated teeth engineered for lifelong chewing comfort.",
     description:
-      "3D CBCT-guided Grade-5 titanium fixtures paired with warm gold-hue abutments and hand-layered porcelain crowns for lifelong function.",
+      "3D CBCT-guided Grade-5 titanium roots paired with warm 18k gold abutments and hand-glazed ceramic crowns for natural function.",
     duration: "60–90 min guided visit",
     comfortNote: "Computer-guided keyhole placement · IV or oral sedation available",
     accentTag: "3D Guided Precision",
@@ -243,25 +243,23 @@ export const DENTAL_SERVICES: DentalServiceItem[] = [
     linkedSceneAnchor: "#craftsmanship",
     highlights: [
       "3D surgical guide avoids freehand incisions",
-      "18k gold-anodized abutment prevents grey gum shadows",
-      "Custom ceramic crown matched to natural enamel",
+      "Warm gold collar prevents grey gumline shadows",
     ],
   },
   {
     id: "aligners",
     number: "02",
     title: "Braces & Clear Aligners",
-    tagline: "Discreet orthodontic architecture from a 60-second digital scan.",
+    tagline: "Discreet orthodontic alignment from a 60-second digital scan.",
     description:
-      "Custom thermoformed optical polymer aligners and low-profile ceramic orthodontics planned digitally so you preview your final smile before day one.",
+      "Custom thermoformed optical polymer aligners planned digitally so you preview your final smile arc before day one.",
     duration: "45 min digital onboarding",
     comfortNote: "Zero putty impressions · Laser-polished scalloped edges",
     accentTag: "Digital Smile Preview",
     accentTone: "lagoon",
     linkedSceneAnchor: "#technology",
     highlights: [
-      "Full 3D movement simulation at first consultation",
-      "Remote progress check-ins reduce in-office visits",
+      "Radiation-free 6,000 fps optical surface scan",
       "Complimentary Vivera-grade retention suite included",
     ],
   },
@@ -271,15 +269,14 @@ export const DENTAL_SERVICES: DentalServiceItem[] = [
     title: "Cosmetic Porcelain Veneers",
     tagline: "0.3mm ultra-thin ceramic veils with natural incisal translucency.",
     description:
-      "Hand-finished lithium disilicate veneers and biomimetic bonding designed around your facial proportions — never opaque, bulky, or artificial.",
-    duration: "2 unhurried studio visits",
+      "Hand-finished lithium disilicate veneers designed around your facial proportions — never opaque, bulky, or artificial.",
+    duration: "2 unhurried visits",
     comfortNote: "Trial Smile preview on your teeth before final bonding",
     accentTag: "Minimal-Prep Artistry",
     accentTone: "bronze",
     linkedSceneAnchor: "#hero-stage",
     highlights: [
-      "0.3mm contact-lens thickness preserves healthy enamel",
-      "Bespoke mamelon & perikymata surface micro-texture",
+      "0.3mm contact-lens thickness preserves 90%+ natural enamel",
       "Stain-impervious glazed ceramic surface",
     ],
   },
@@ -287,54 +284,51 @@ export const DENTAL_SERVICES: DentalServiceItem[] = [
     id: "gentle-root-canal",
     number: "04",
     title: "Gentle Microscopic Root Canal",
-    tagline: "Quiet, single-visit inner tooth relief under 20× optical magnification.",
+    tagline: "Quiet, single-visit relief under 20× optical magnification.",
     description:
-      "Buffered anesthetic delivery, acoustic irrigation, and Zeiss dental microscopy turn what used to be feared into a calm, nap-like restoration.",
-    duration: "60 min single-visit relief",
-    comfortNote: "Warm buffered numbing · Noise-canceling Bose audio suite",
+      "Warm pH-buffered numbing, acoustic irrigation, and Zeiss microscopy make treatment calm, predictable, and painless.",
+    duration: "60 min single visit",
+    comfortNote: "Warm buffered numbing · Bose noise-canceling suite",
     accentTag: "Pain-First Protocol",
     accentTone: "lagoon",
     linkedSceneAnchor: "#services",
     highlights: [
       "pH-buffered anesthetic eliminates the initial pinch",
-      "20× optical magnification locates hidden micro-canals",
-      "Same-day ceramic onlay or crown seal available",
+      "20× Zeiss magnification locates hidden canals",
     ],
   },
   {
     id: "optical-whitening",
     number: "05",
     title: "Cold-Light Enamel Whitening",
-    tagline: "Radiant pearl shade lift with nano-hydroxyapatite sensitivity armor.",
+    tagline: "Up to 8 shades brighter with zero-zing sensitivity shield.",
     description:
-      "Our cold-spectrum optical activation lifts years of espresso, wine, and aging chromophores while remineralizing enamel prisms to prevent post-visit zings.",
-    duration: "60 min studio lounge session",
+      "Cold-spectrum optical activation lifts deep stains while nano-hydroxyapatite remineralizes enamel prisms.",
+    duration: "60 min lounge session",
     comfortNote: "Zero-zing remineralizing serum before & after",
     accentTag: "Sensitivity-Free Lift",
     accentTone: "lagoon",
     linkedSceneAnchor: "#technology",
     highlights: [
       "Up to 8 VITA shade steps in one 60-minute session",
-      "Nano-hydroxyapatite seals microscopic dentin tubules",
-      "Includes custom-fitted touch-up trays for home",
+      "Nano-hydroxyapatite seals tubules to prevent zings",
     ],
   },
   {
     id: "pediatric-family",
     number: "06",
     title: "Pediatric & Family Sanctuary",
-    tagline: "Fear-free childhood visits that build a lifetime of calm confidence.",
+    tagline: "Fear-free visits that build lifelong dental confidence.",
     description:
-      "Tell-Show-Do gentle onboarding, ceiling cinema, warm honey-fluoride or hydroxyapatite varnishes, and BPA-free protective molar sealants for ages 2–17.",
-    duration: "45 min unhurried kid-paced visit",
-    comfortNote: "Parent-beside-chair welcome · Zero rush if a child needs time",
+      "Gentle Tell-Show-Do onboarding, ceiling cinema, and sweet mineral varnishes for ages 1 to 17.",
+    duration: "45 min kid-paced visit",
+    comfortNote: "Parent beside chair · Zero rush if a child needs time",
     accentTag: "Kids & Sensory Friendly",
     accentTone: "terracotta",
     linkedSceneAnchor: "#kids-family",
     highlights: [
-      "Sensory-friendly lighting & ceiling story projection",
-      "No-drill resin infiltration for early enamel spots",
-      "Dedicated family block scheduling for parents + kids",
+      "Ceiling story projection & starlight camera exploration",
+      "Sweet honey mineral varnish & BPA-free sealants",
     ],
   },
 ];
@@ -354,38 +348,38 @@ export interface TransformationCase {
 export const TRANSFORMATION_CASES: TransformationCase[] = [
   {
     id: "case-veneers",
-    title: "8 Minimal-Prep Porcelain Veneers + Gingival Harmony",
+    title: "8 Minimal-Prep Porcelain Veneers",
     category: "Cosmetic Veneers",
     duration: "3 Weeks · 2 Visits",
     summary:
-      "Restored worn incisal edges, closed diastema spacing, and lifted shade from A3 to natural B1 with translucent incisal halo.",
-    beforeShade: "VITA A3 · Worn Incisal Edges",
-    afterShade: "Natural B1 · Opalescent Enamel",
-    beforeDetails: "Shortened central incisors, uneven gingival zeniths, and warm intrinsic dentin discoloration.",
-    afterDetails: "Balanced Golden-Proportion central incisors with natural mamelon translucency and satin specular luster.",
+      "Restored worn incisal edges, closed spacing, and lifted shade from A3 to natural B1 with translucent incisal halo.",
+    beforeShade: "Worn Incisal Edges · VITA A3",
+    afterShade: "Opalescent Enamel · Natural B1",
+    beforeDetails: "Shortened central incisors, uneven zeniths, and warm intrinsic dentin discoloration.",
+    afterDetails: "Balanced central incisors with natural mamelon translucency and satin specular luster.",
   },
   {
     id: "case-aligners-whitening",
-    title: "Clear Aligner Arch Expansion + Cold-Light Whitening",
+    title: "Clear Aligner Expansion + Cold-Light Whitening",
     category: "Clear Aligners + Whitening",
     duration: "7 Months · 18 Aligners",
     summary:
-      "Broadened the buccal corridor, aligned rotated lateral incisors without extractions, and finished with nano-hydroxyapatite whitening.",
+      "Broadened the buccal corridor, aligned rotated incisors without extractions, and finished with B1 pearl whitening.",
     beforeShade: "Crowded Arch · VITA A2.5",
-    afterShade: "Broad Symmetry · VITA B1",
+    afterShade: "Broad Smile Arc · VITA B1",
     beforeDetails: "Narrow smile corridor with overlapping upper lateral incisors and shadowed premolars.",
     afterDetails: "Full 10-tooth radiant smile arc with effortless lip support and zero enamel stripping.",
   },
   {
     id: "case-implant-crown",
-    title: "Single-Tooth Titanium Implant & Gold-Abutment Crown",
+    title: "Single-Tooth Titanium Implant & Gold Abutment",
     category: "Guided Implant",
-    duration: "14 Weeks Total Integration",
+    duration: "14 Weeks Integration",
     summary:
-      "Replaced a fractured first premolar with a 3D-guided titanium fixture, 18k gold-hue abutment, and custom lithium-disilicate crown.",
+      "Replaced a fractured premolar with a 3D-guided titanium fixture, warm 18k gold abutment, and custom porcelain crown.",
     beforeShade: "Fractured Premolar Site",
-    afterShade: "Seamless Biomimetic Crown",
-    beforeDetails: "Missing upper premolar with risk of adjacent tooth drift and gingival recession.",
+    afterShade: "Biomimetic Ceramic Crown",
+    beforeDetails: "Missing upper premolar with risk of adjacent tooth drift and bone loss.",
     afterDetails: "Healthy pink interdental papilla and indistinguishable ceramic translucency.",
   },
 ];
@@ -405,7 +399,7 @@ export const DOCTORS: DoctorProfile[] = [
   {
     id: "dr-vance",
     name: "Dr. Elena Vance, DDS, MS",
-    credentials: "Lead Prosthodontist & Aesthetic Director [Placeholder Profile]",
+    credentials: "Lead Prosthodontist & Aesthetic Director",
     role: "Prosthodontics & Minimal-Prep Ceramics",
     education: "Baylor College of Dentistry (Texas A&M) · MS Prosthodontics",
     quote:
@@ -416,8 +410,8 @@ export const DOCTORS: DoctorProfile[] = [
   {
     id: "dr-sterling",
     name: "Dr. Marcus Sterling, DMD, FICOI",
-    credentials: "Director of Guided Implantology & Endodontics [Placeholder Profile]",
-    role: "3D Guided Implants & Microscopic Root Therapy",
+    credentials: "Director of Guided Implantology",
+    role: "3D Guided Implants & Microscopic Restorations",
     education: "UPenn School of Dental Medicine · Fellowship in Implantology",
     quote:
       "When you plan every millimeter in 3D before the visit begins, the appointment itself becomes quiet, gentle, and remarkably fast.",
@@ -427,8 +421,8 @@ export const DOCTORS: DoctorProfile[] = [
   {
     id: "dr-lin",
     name: "Dr. Maya Lin, DDS",
-    credentials: "Pediatric & Airway-Focused Orthodontic Specialist [Placeholder Profile]",
-    role: "Pediatric Sanctuary & Clear Aligner Therapy",
+    credentials: "Airway & Pediatric Specialist",
+    role: "Family Sanctuary & Clear Aligner Therapy",
     education: "UT Health San Antonio School of Dentistry · Pediatric Residency",
     quote:
       "A child who feels in control of their dental visit at age five grows into an adult who never fears taking care of their health.",
@@ -446,36 +440,26 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "I have severe dental anxiety. How is a visit at Texas Smile Studio different?",
     answer:
-      "We built the entire studio around nervous patients. We never rush or lecture, we apply warm pH-buffered numbing gel before anything touches a tooth, we replace gag-inducing putty molds with a 60-second optical camera scan, and every suite features noise-canceling Bose headphones and ceiling cinema. You also hold a stop-signal button in your hand—if you raise a finger, we pause immediately.",
+      "We built our entire studio around nervous patients. We never rush, apply warm pH-buffered numbing so you never feel a pinch, offer noise-canceling Bose headphones with ceiling cinema, and place a stop-signal button in your hand — raise a finger, and we pause immediately.",
   },
   {
     question: "Do you accept dental insurance, and do I see exact costs before treatment?",
     answer:
-      "Yes. We work with all major PPO dental insurance plans (including Delta Dental, Cigna, MetLife, Aetna, BlueCross BlueShield, and Guardian) and file claims on your behalf. Before any treatment begins, we present a transparent, itemized written fee breakdown showing your exact insurance benefit and out-of-pocket portion—zero surprise bills.",
+      "Yes. We work with all major PPO dental plans (Delta, Cigna, MetLife, Aetna, BCBS, Guardian) and file claims on your behalf. Before any procedure begins, you receive an itemized written summary showing your exact insurance benefit and out-of-pocket portion — zero surprise bills.",
   },
   {
-    question: "What if I don't have dental insurance?",
+    question: "How thin are your porcelain veneers, and do you grind down healthy teeth?",
     answer:
-      "Our in-house Texas Smile Membership Plan covers your annual 3D optical wellness scans, two preventive cleanings, necessary digital X-rays, and an immediate 15% courtesy across restorative, aligner, and cosmetic treatments—with no waiting periods, deductibles, or annual maximums. We also offer 0% APR monthly financing over 12–24 months.",
+      "Never. We reject aggressive 'shark-tooth' preparations. Our high-strength lithium disilicate veneers are crafted as thin as 0.3mm — contact-lens thickness — preserving 85% to 95% of your natural enamel with a reversible 'Trial Smile' preview on your teeth before final bonding.",
   },
   {
-    question: "How thin are your porcelain veneers, and do you have to grind my teeth down?",
+    question: "What is your 60-second 3D digital scan, and does it replace putty impressions?",
     answer:
-      "Never. We reject aggressive 'shark-tooth' preparations. Using 3D digital additive planning and high-strength lithium disilicate ceramics, our veneers are crafted as thin as 0.3mm—preserving 85% to 95% of your natural tooth enamel while giving you a reversible 'Trial Smile' preview before final bonding.",
-  },
-  {
-    question: "Why do you use 18k gold-hue abutments on dental implants instead of standard grey metal?",
-    answer:
-      "Standard silver-grey titanium abutments can cast a dull, dark shadow through thin gum tissue over time. By pairing a biocompatible Grade-5 titanium root with a warm 18k gold-anodized abutment collar beneath a translucent porcelain crown, your gumline keeps its natural warm pink vitality and the crown scatters light just like natural dentin.",
-  },
-  {
-    question: "At what age should my child have their first pediatric visit?",
-    answer:
-      "The American Academy of Pediatric Dentistry recommends a first 'Happy Visit' around age 1 or within 6 months of their first tooth emerging. Our kids' sanctuary visits are completely play-paced: children can sit on a parent's lap, explore the 'star camera' wand on their fingernail first, and never experience forced treatment.",
+      "Our radiation-free optical laser scanner captures 6,000 surface frames per second, creating an exact sub-millimeter 3D replica of your teeth in under a minute — completely replacing gag-inducing putty impression trays.",
   },
   {
     question: "Where in Dallas are you located, and is parking complimentary?",
     answer:
-      "Our studio is located in Uptown / Turtle Creek along Cedar Springs Road in Dallas, TX, with reserved ground-level patient valet and covered self-parking validated at our front desk. Early-morning (8:00 AM) and executive late-afternoon appointments are available.",
+      "Our studio is located at 3811 Turtle Creek Blvd (Suite 400) in Uptown Dallas, with complimentary ground-level patient valet and validated covered self-parking. Early-morning (8:00 AM) and executive late slots are available.",
   },
 ];

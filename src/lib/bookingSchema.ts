@@ -72,6 +72,8 @@ export interface BookingConfirmation {
   referenceCode: string;
   createdAt: string;
   deliveryMode: "supabase+resend" | "supabase" | "resend" | "local-ledger";
+  notifyEmail: string;
+  mailtoUrl: string;
   summary: {
     fullName: string;
     serviceId: ServiceId;

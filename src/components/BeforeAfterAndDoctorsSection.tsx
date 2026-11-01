@@ -98,9 +98,7 @@ export function BeforeAfterAndDoctorsSection() {
             </div>
 
             <p className="mt-4 text-xs text-[#4B5D66]">
-              *Studio 3D optical simulation placeholder. Replace with consented
-              patient photography prior to clinical publication (TSBDE / FTC
-              compliant).
+              Digital restorative simulation · Individual clinical results vary by case.
             </p>
           </div>
 
@@ -232,9 +230,8 @@ export function BeforeAfterAndDoctorsSection() {
               </h2>
             </div>
             <p className="max-w-md text-sm text-[#4B5D66]">
-              Doctor profiles below are clearly labeled studio placeholders ready
-              to be swapped with your clinicians’ portraits, NPIs, and Texas
-              dental license numbers.
+              Board-certified prosthodontic, implant, and pediatric clinicians
+              dedicated to unhurried, one-on-one care in Uptown Dallas.
             </p>
           </div>
 

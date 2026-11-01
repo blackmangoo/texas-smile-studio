@@ -108,10 +108,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Optional Resend email notification when RESEND_API_KEY is configured
-    const resendKey = process.env.RESEND_API_KEY;
+    // 2. Notification email targeting ammar.akbar2002@gmail.com
     const notifyEmail =
-      process.env.CLINIC_NOTIFICATION_EMAIL || "concierge@texassmilestudio.com";
+      process.env.CLINIC_NOTIFICATION_EMAIL || "ammar.akbar2002@gmail.com";
+    const resendKey = process.env.RESEND_API_KEY;
     if (resendKey && !resendKey.includes("re_your_api_key_here")) {
       try {
         const emailRes = await fetch("https://api.resend.com/emails", {
@@ -132,6 +132,25 @@ export async function POST(request: Request) {
         sentResend = false;
       }
     }
+
+    // Pre-composed direct mailto URL targeting ammar.akbar2002@gmail.com for instant client redirect / dispatch
+    const mailtoSubject = encodeURIComponent(
+      `[Texas Smile Studio Suite Request] ${input.fullName} — ${referenceCode}`
+    );
+    const mailtoBody = encodeURIComponent(
+      `Hello Ammar & Texas Smile Studio Concierge,\n\nI have requested an appointment suite window:\n\n` +
+        `• Reference Code: ${referenceCode}\n` +
+        `• Patient Name: ${input.fullName}\n` +
+        `• Direct Email: ${input.email}\n` +
+        `• Mobile Phone: ${input.phone}\n` +
+        `• Treatment Focus: ${input.serviceId}\n` +
+        `• Preferred Date: ${input.preferredDate}\n` +
+        `• Time Slot: ${input.preferredSlot}\n` +
+        `• Comfort Protocol: ${input.comfortPreference}\n` +
+        `• Coverage Option: ${input.insuranceType}\n\n` +
+        `Please confirm suite availability and send my pre-visit summary.`
+    );
+    const mailtoUrl = `mailto:${notifyEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
 
     // 3. Always write to local JSON ledger (.data/bookings.json) in dev/self-hosted environments
     try {
@@ -170,6 +189,8 @@ export async function POST(request: Request) {
       referenceCode,
       createdAt,
       deliveryMode,
+      notifyEmail,
+      mailtoUrl,
       summary: {
         fullName: input.fullName,
         serviceId: input.serviceId,

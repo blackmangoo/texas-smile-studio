@@ -55,10 +55,8 @@ export function ServicesBentoSection({
           </div>
           <div className="lg:col-span-5">
             <p className="text-base sm:text-lg leading-relaxed text-[#4B5D66]">
-              Whether you are visiting for a 60-second digital scan, clear
-              aligners, a single-visit microscopic root canal, or your child’s
-              first happy checkup, every suite is scheduled for one patient at a
-              time.
+              Every suite is reserved for one patient at a time — unhurried,
+              private, and engineered around your long-term comfort.
             </p>
           </div>
         </div>
